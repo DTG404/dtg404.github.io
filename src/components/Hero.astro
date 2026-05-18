@@ -4,12 +4,12 @@
 
 <div class="hero">
   <div class="hero-content">
-    <div class="terminal-bar glass">
-      <span class="terminal-dot dot-red"></span>
-      <span class="terminal-dot dot-amber"></span>
-      <span class="terminal-dot dot-green"></span>
-      <span class="terminal-path">~/about.sh</span>
-    </div>
+<div class="terminal-bar glass" id="terminal-bar">
+        <span class="terminal-dot dot-red"></span>
+        <span class="terminal-dot dot-amber"></span>
+        <span class="terminal-dot dot-green"></span>
+        <span class="terminal-path" id="term-path-text">~/about.sh</span>
+      </div>
     <div class="terminal-body glass" id="terminal-body">
       <div id="term-screen"></div>
       <div class="line prompt-end" id="term-cursor-line">
@@ -93,6 +93,74 @@
   } else {
     window.addEventListener('load', function() { setTimeout(runScript, 300); });
   }
+})();
+
+// ---- GLITCH TEXT EFFECT ----
+(function() {
+  var pathEl = document.getElementById('term-path-text');
+  if (!pathEl) return;
+  var original = pathEl.textContent;
+  var glitches = [
+    '~/about.sh',
+    '~/about.sh\x1b[5~',
+    '/usr/bin/env',
+    'SEGFAULT',
+    '~/about.sh 󰀃',
+    'nice try',
+    '~/about.sh',
+  ];
+
+  function doGlitch() {
+    // Random interval between 4-12 seconds
+    var nextDelay = 4000 + Math.random() * 8000;
+    setTimeout(function() {
+      // Pick a random glitch text
+      var glitchText = glitches[Math.floor(Math.random() * glitches.length)];
+      pathEl.textContent = glitchText;
+      pathEl.style.color = '#ff00e5';
+      pathEl.style.transition = 'color 0.05s';
+
+      // Restore after brief flash
+      setTimeout(function() {
+        pathEl.textContent = original;
+        pathEl.style.color = '';
+      }, 120 + Math.random() * 80);
+
+      doGlitch();
+    }, nextDelay);
+  }
+
+  doGlitch();
+})();
+
+// ---- RANDOM HEADING GLITCH ----
+(function() {
+  var headings = document.querySelectorAll('.card-title, .section-title, .contact-title, .nyx-title');
+  if (headings.length === 0) return;
+
+  function randomGlitch() {
+    var delay = 6000 + Math.random() * 14000;
+    setTimeout(function() {
+      var h = headings[Math.floor(Math.random() * headings.length)];
+      var orig = h.textContent;
+      if (!orig || orig.length < 3) { randomGlitch(); return; }
+
+      // Brief horizontal shift with color split
+      h.style.transform = 'translateX(' + (Math.random() > 0.5 ? '2' : '-2') + 'px)';
+      h.style.textShadow = '2px 0 #ff00e5, -2px 0 #00f0ff';
+      h.style.transition = 'none';
+
+      setTimeout(function() {
+        h.style.transform = '';
+        h.style.textShadow = '';
+        h.style.transition = 'all 0.1s ease-out';
+      }, 80 + Math.random() * 60);
+
+      randomGlitch();
+    }, delay);
+  }
+
+  randomGlitch();
 })();
 </script>
 
