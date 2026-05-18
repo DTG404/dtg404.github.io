@@ -190,5 +190,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       0%, 100% { opacity: 1; }
       50% { opacity: 0.2; }
     }
+
+    @media (max-width: 640px) {
+      .notfound-terminal {
+        max-width: 95vw;
+      }
+      .notfound-body {
+        padding: 1rem;
+        font-size: 0.8rem;
+        min-height: 200px;
+      }
+      .notfound-bar {
+        padding: 8px 12px;
+      }
+    }
   </style>
 </BaseLayout>

@@ -20,7 +20,8 @@
 
   function initParticles() {
     particles = [];
-    const count = Math.min(Math.floor(window.innerWidth * 0.08), 80);
+    const isMobile = window.innerWidth < 640;
+    const count = isMobile ? Math.min(Math.floor(window.innerWidth * 0.04), 25) : Math.min(Math.floor(window.innerWidth * 0.08), 80);
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * canvas.width,
