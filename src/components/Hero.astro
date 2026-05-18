@@ -31,9 +31,9 @@
     { type: 'out', text: 'Xavier Coleman', cls: 'highlight-cyan', delay: 150 },
     { type: 'out', text: ' \u2014 DevOps Lead @ Deloitte', cls: 'highlight-magenta', delay: 250 },
     { type: 'cmd', text: 'cat ~/bio.txt', delay: 500 },
-    { type: 'out', text: 'Building infrastructure for AI and automation.', delay: 150 },
-    { type: 'out', text: 'I make things with code, agents, and creativity.', delay: 200 },
-    { type: 'out', text: 'Open source. Local-first. Cyberpunk aesthetics.', delay: 200 },
+    { type: 'out', text: 'Building infrastructure for AI and automation.', cls: 'highlight-cyan', delay: 150 },
+    { type: 'out', text: 'I make things with code, agents, and creativity.', cls: 'highlight-amber', delay: 200 },
+    { type: 'out', text: 'Open source. Local-first. Cyberpunk aesthetics.', cls: 'highlight-magenta', delay: 200 },
     { type: 'cmd', text: 'ls -la /projects/ | wc -l', delay: 600 },
     { type: 'out', text: '13 public projects across AI agents, infrastructure, dev tools, and creative work', cls: 'highlight-green', delay: 300 },
   ];
@@ -157,12 +157,13 @@
   }
 
   .cmd {
-    color: var(--text-primary);
+    color: var(--cyan);
   }
 
   .output {
     color: var(--text-secondary);
     padding-left: 1.2rem;
+    border-left: 2px solid rgba(255, 255, 255, 0.04);
   }
 
   .highlight-cyan {
@@ -177,6 +178,10 @@
 
   .highlight-green {
     color: var(--green);
+  }
+
+  .highlight-amber {
+    color: var(--amber);
   }
 
   .cursor-blink {
