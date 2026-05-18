@@ -1,0 +1,305 @@
+---
+// Project Detail Page — Dynamic route
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import TechBadge from '../../components/TechBadge.astro';
+import projects from '../../data/projects.json';
+
+export function getStaticPaths() {
+  return projects.map((p) => ({
+    params: { slug: p.slug },
+    props: { project: p },
+  }));
+}
+
+const { project } = Astro.props;
+const catColor = ({
+  'ai-agents': 'var(--cyan)',
+  'infrastructure': 'var(--green)',
+  'dev-tools': 'var(--amber)',
+  'creative': 'var(--magenta)',
+  'security': 'var(--red)',
+}[project.category] || 'var(--cyan)');
+---
+
+<BaseLayout title={`${project.title} — Xavier Coleman`} description={project.tagline}>
+  <Header />
+  <main class="project-page">
+    <div class="back-nav">
+      <a href="/#projects" class="back-link">&larr; Back to projects</a>
+    </div>
+
+    <div class="project-header animate-in stagger-1">
+      <div class="header-meta">
+        <span class="tier-badge" style={`border-color: ${catColor}; color: ${catColor}`}>
+          {project.tier === 'flagship' ? '★ Flagship' : 'Project'}
+        </span>
+        <span class="category-badge" style={`background: ${catColor}15; color: ${catColor}`}>
+          {project.category}
+        </span>
+      </div>
+      <h1 class="project-title">{project.title}</h1>
+      <p class="project-tagline">{project.tagline}</p>
+      <p class="project-desc">{project.description}</p>
+    </div>
+
+    <div class="project-content animate-in stagger-2">
+      <div class="content-grid">
+        <div class="tech-section glass">
+          <h3 class="section-heading">Technology</h3>
+          <div class="tech-list">
+            {project.tech.map(t => <TechBadge tech={t} />)}
+          </div>
+        </div>
+
+        <div class="links-section glass">
+          <h3 class="section-heading">Links</h3>
+          <div class="links-list">
+            <a href={project.links.github} target="_blank" class="link-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              View on GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="features-section glass">
+        <h3 class="section-heading">Features</h3>
+        <ul class="features-list">
+          {project.features.map(f => (
+            <li class="feature-item">
+              <span class="feature-chevron">&#9656;</span>
+              {f}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {project.highlights && project.highlights.length > 0 && (
+        <div class="highlights-section glass glow-cyan">
+          <h3 class="section-heading">Highlights</h3>
+          <ul class="highlights-list">
+            {project.highlights.map(h => (
+              <li class="highlight-item">
+                <span class="highlight-dot"></span>
+                {h}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </main>
+
+  <footer class="footer">
+    <a href="/#projects" class="back-link">&larr; All projects</a>
+    <p>Built with Astro &mdash; hosted on GitHub Pages</p>
+  </footer>
+</BaseLayout>
+
+<style>
+  .project-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    padding-top: 6rem;
+    min-height: 100vh;
+  }
+
+  .back-nav {
+    margin-bottom: 2rem;
+  }
+
+  .back-link {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover {
+    color: var(--cyan);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .tier-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .category-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .project-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text-primary), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .project-tagline {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+
+  .project-desc {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 700px;
+  }
+
+  .project-content {
+    margin-top: 3rem;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-heading {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .tech-section,
+  .links-section,
+  .features-section,
+  .highlights-section {
+    padding: 1.5rem;
+  }
+
+  .tech-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .link-item:hover {
+    opacity: 0.8;
+  }
+
+  .features-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .features-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .feature-chevron {
+    color: var(--cyan);
+    font-size: 0.7rem;
+    margin-top: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .highlights-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+  }
+
+  .highlight-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+    box-shadow: 0 0 6px var(--cyan);
+  }
+
+  .footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    border-top: 1px solid var(--border-glass);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 640px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+    .project-title {
+      font-size: 1.8rem;
+    }
+    .project-page {
+      padding: 1rem;
+      padding-top: 5rem;
+    }
+  }
+</style>

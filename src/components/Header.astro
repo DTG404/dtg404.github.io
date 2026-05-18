@@ -1,0 +1,83 @@
+---
+// Header — Glass navigation bar
+---
+
+<header class="header">
+  <nav class="nav">
+    <a href="/" class="logo">
+      <span class="logo-bracket">&lt;</span>
+      <span class="logo-text">DTG</span>
+      <span class="logo-bracket">/&gt;</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Projects</a>
+      <a href="https://github.com/digitalghost404" class="nav-link" target="_blank">GitHub</a>
+      <a href="https://www.linkedin.com/in/xcoleman" class="nav-link" target="_blank">LinkedIn</a>
+    </div>
+  </nav>
+</header>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--border-glass);
+  }
+
+  .nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .logo:hover { opacity: 1; }
+
+  .logo-bracket {
+    color: var(--cyan);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .logo-text {
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .nav-link {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+    text-decoration: none;
+  }
+
+  .nav-link:hover {
+    color: var(--cyan);
+    opacity: 1;
+  }
+</style>

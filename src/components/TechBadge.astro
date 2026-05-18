@@ -1,0 +1,31 @@
+---
+// TechBadge — Technology tag component
+export interface Props {
+  tech: string;
+}
+
+const { tech } = Astro.props;
+---
+
+<span class="tech-badge">{tech}</span>
+
+<style>
+  .tech-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    background: rgba(0, 240, 255, 0.08);
+    color: var(--cyan);
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+.tech-badge:hover {
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.3);
+  }
+</style>
