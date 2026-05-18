@@ -75,6 +75,23 @@ const { title, description } = Astro.props;
       a { color: var(--cyan); text-decoration: none; transition: opacity 0.2s; }
       a:hover { opacity: 0.8; }
 
+    .crt-overlay {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9997;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.03) 0px,
+        rgba(0, 0, 0, 0.03) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    }
+
     h1, h2, h3, h4 {
         font-weight: 600;
         line-height: 1.3;
@@ -137,6 +154,7 @@ const { title, description } = Astro.props;
   <body class="bg-grid">
     <ParticleField />
     <EasterEggs />
+    <div class="crt-overlay"></div>
     <slot />
   </body>
 </html>

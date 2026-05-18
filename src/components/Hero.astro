@@ -1,50 +1,100 @@
 ---
-// Hero — Terminal-style landing intro
+// Hero — Terminal-style landing intro with typewriter animation
 ---
 
 <div class="hero">
-  <div class="hero-content animate-in stagger-1">
+  <div class="hero-content">
     <div class="terminal-bar glass">
       <span class="terminal-dot dot-red"></span>
       <span class="terminal-dot dot-amber"></span>
       <span class="terminal-dot dot-green"></span>
       <span class="terminal-path">~/about.sh</span>
     </div>
-    <div class="terminal-body glass">
-      <div class="line">
-        <span class="prompt">$</span>
-        <span class="cmd">whoami</span>
-      </div>
-      <div class="line output">
-        <span class="highlight-cyan">Xavier Coleman</span>
-        <span class="dim"> — </span>
-        <span class="highlight-magenta">DevOps Lead @ Deloitte</span>
-      </div>
-      <div class="line">
-        <span class="prompt">$</span>
-        <span class="cmd">cat ~/bio.txt</span>
-      </div>
-      <div class="line output bio">
-        Building infrastructure for AI and automation.
-        <br />
-        I make things with code, agents, and creativity.
-        <br />
-        Open source. Local-first. Cyberpunk aesthetics.
-      </div>
-      <div class="line">
-        <span class="prompt">$</span>
-        <span class="cmd">ls -la /projects/ | wc -l</span>
-      </div>
-      <div class="line output highlight-green">
-        <span class="blink">_</span> 13 public projects across AI agents, infrastructure, dev tools, and creative work
-      </div>
-      <div class="line prompt-end">
+    <div class="terminal-body glass" id="terminal-body">
+      <div id="term-screen"></div>
+      <div class="line prompt-end" id="term-cursor-line">
         <span class="prompt">$</span>
         <span class="cursor-blink">_</span>
       </div>
     </div>
   </div>
 </div>
+
+<script is:inline>
+(function() {
+  var screen = document.getElementById('term-screen');
+  var cursorLine = document.getElementById('term-cursor-line');
+  if (!screen) return;
+
+  var script = [
+    { type: 'cmd', text: 'whoami', delay: 400 },
+    { type: 'out', text: 'Xavier Coleman', cls: 'highlight-cyan', delay: 150 },
+    { type: 'out', text: ' \u2014 DevOps Lead @ Deloitte', cls: 'highlight-magenta', delay: 250 },
+    { type: 'cmd', text: 'cat ~/bio.txt', delay: 500 },
+    { type: 'out', text: 'Building infrastructure for AI and automation.', delay: 150 },
+    { type: 'out', text: 'I make things with code, agents, and creativity.', delay: 200 },
+    { type: 'out', text: 'Open source. Local-first. Cyberpunk aesthetics.', delay: 200 },
+    { type: 'cmd', text: 'ls -la /projects/ | wc -l', delay: 600 },
+    { type: 'out', text: '13 public projects across AI agents, infrastructure, dev tools, and creative work', cls: 'highlight-green', delay: 300 },
+  ];
+
+  var index = 0;
+
+  function typeText(element, text, speed, callback) {
+    var i = 0;
+    var timer = setInterval(function() {
+      if (i < text.length) {
+        element.textContent += text[i];
+        i++;
+      } else {
+        clearInterval(timer);
+        if (callback) setTimeout(callback, 100);
+      }
+    }, speed || 20);
+    return timer;
+  }
+
+  function runScript() {
+    cursorLine.style.display = 'none';
+
+    if (index >= script.length) {
+      cursorLine.style.display = 'flex';
+      return;
+    }
+
+    var step = script[index];
+
+    if (step.type === 'cmd') {
+      var line = document.createElement('div');
+      line.className = 'line';
+      line.innerHTML = '<span class="prompt">$</span><span class="cmd"></span>';
+      screen.appendChild(line);
+      var cmdSpan = line.querySelector('.cmd');
+
+      index++;
+      typeText(cmdSpan, step.text, 30 + Math.random() * 20, function() {
+        setTimeout(runScript, step.delay || 400);
+      });
+
+    } else if (step.type === 'out') {
+      var line = document.createElement('div');
+      line.className = 'line output' + (step.cls ? ' ' + step.cls : '');
+      screen.appendChild(line);
+
+      index++;
+      typeText(line, step.text, 12 + Math.random() * 8, function() {
+        setTimeout(runScript, step.delay || 150);
+      });
+    }
+  }
+
+  if (document.readyState === 'complete') {
+    setTimeout(runScript, 300);
+  } else {
+    window.addEventListener('load', function() { setTimeout(runScript, 300); });
+  }
+})();
+</script>
 
 <style>
   .hero {
@@ -67,7 +117,7 @@
     gap: 8px;
     padding: 10px 16px;
     border-bottom: none;
-    border-radius: 12px 12px 12px 0 0;
+    border-radius: 12px 12px 0 0;
   }
 
   .terminal-dot {
@@ -93,10 +143,12 @@
     font-family: var(--font-mono);
     font-size: 0.95rem;
     line-height: 1.8;
+    min-height: 280px;
   }
 
   .line {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1px;
+    min-height: 1.6em;
   }
 
   .prompt {
@@ -111,11 +163,6 @@
   .output {
     color: var(--text-secondary);
     padding-left: 1.2rem;
-    margin-bottom: 0.8rem;
-  }
-
-  .bio {
-    line-height: 1.6;
   }
 
   .highlight-cyan {
@@ -132,21 +179,19 @@
     color: var(--green);
   }
 
-  .dim {
-    color: var(--text-muted);
-  }
-
-  .blink {
-    animation: pulse-glow 1.5s ease-in-out infinite;
-    color: var(--green);
-  }
-
   .cursor-blink {
-    animation: pulse-glow 1s ease-in-out infinite;
+    animation: pulseCursor 0.8s ease-in-out infinite;
     color: var(--cyan);
   }
 
+  @keyframes pulseCursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
   .prompt-end {
+    display: flex;
+    align-items: center;
     margin-top: 0.3rem;
   }
 
@@ -154,6 +199,7 @@
     .terminal-body {
       font-size: 0.8rem;
       padding: 1rem;
+      min-height: 220px;
     }
     .hero {
       padding: 1rem;
