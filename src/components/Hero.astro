@@ -13,8 +13,8 @@
     <div class="terminal-body glass" id="terminal-body">
       <div id="term-screen"></div>
       <div class="line prompt-end" id="term-cursor-line">
-        <span class="prompt">$</span>
-        <span class="cursor-blink">_</span>
+        <span class="nt-prompt">$</span>
+        <span class="nt-cursor-blink">_</span>
       </div>
     </div>
   </div>
@@ -28,14 +28,14 @@
 
   var script = [
     { type: 'cmd', text: 'whoami', delay: 400 },
-    { type: 'out', text: 'Xavier Coleman', cls: 'highlight-cyan', delay: 150 },
-    { type: 'out', text: ' \u2014 DevOps Lead @ Deloitte', cls: 'highlight-magenta', delay: 250 },
+    { type: 'out', text: 'Xavier Coleman', cls: 'nt-hl-cyan', delay: 150 },
+    { type: 'out', text: ' \u2014 DevOps Lead @ Deloitte', cls: 'nt-hl-magenta', delay: 250 },
     { type: 'cmd', text: 'cat ~/bio.txt', delay: 500 },
-    { type: 'out', text: 'Building infrastructure for AI and automation.', cls: 'highlight-cyan', delay: 150 },
-    { type: 'out', text: 'I make things with code, agents, and creativity.', cls: 'highlight-amber', delay: 200 },
-    { type: 'out', text: 'Open source. Local-first. Cyberpunk aesthetics.', cls: 'highlight-magenta', delay: 200 },
+    { type: 'out', text: 'Building infrastructure for AI and automation.', cls: 'nt-hl-cyan', delay: 150 },
+    { type: 'out', text: 'I make things with code, agents, and creativity.', cls: 'nt-hl-amber', delay: 200 },
+    { type: 'out', text: 'Open source. Local-first. Cyberpunk aesthetics.', cls: 'nt-hl-magenta', delay: 200 },
     { type: 'cmd', text: 'ls -la /projects/ | wc -l', delay: 600 },
-    { type: 'out', text: '13 public projects across AI agents, infrastructure, dev tools, and creative work', cls: 'highlight-green', delay: 300 },
+    { type: 'out', text: '13 public projects across AI agents, infrastructure, dev tools, and creative work', cls: 'nt-hl-green', delay: 300 },
   ];
 
   var index = 0;
@@ -67,9 +67,9 @@
     if (step.type === 'cmd') {
       var line = document.createElement('div');
       line.className = 'line';
-      line.innerHTML = '<span class="prompt">$</span><span class="cmd"></span>';
+      line.innerHTML = '<span class="nt-prompt">$</span><span class="nt-cmd"></span>';
       screen.appendChild(line);
-      var cmdSpan = line.querySelector('.cmd');
+      var cmdSpan = line.querySelector('.nt-cmd');
 
       index++;
       typeText(cmdSpan, step.text, 30 + Math.random() * 20, function() {
@@ -78,7 +78,7 @@
 
     } else if (step.type === 'out') {
       var line = document.createElement('div');
-      line.className = 'line output' + (step.cls ? ' ' + step.cls : '');
+      line.className = 'line nt-output' + (step.cls ? ' ' + step.cls : '');
       screen.appendChild(line);
 
       index++;
@@ -151,40 +151,50 @@
     min-height: 1.6em;
   }
 
-  .prompt {
+  .prompt-end {
+    display: flex;
+    align-items: center;
+    margin-top: 0.3rem;
+  }
+
+  /* ---- RUNTIME CLASSES (applied by JS, must be unscoped) ---- */
+</style>
+
+<style is:global>
+  .nt-prompt {
     color: var(--green);
     margin-right: 0.5rem;
   }
 
-  .cmd {
+  .nt-cmd {
     color: var(--cyan);
   }
 
-  .output {
+  .nt-output {
     color: var(--text-secondary);
     padding-left: 1.2rem;
     border-left: 2px solid rgba(255, 255, 255, 0.04);
   }
 
-  .highlight-cyan {
+  .nt-hl-cyan {
     color: var(--cyan);
     font-weight: 600;
   }
 
-  .highlight-magenta {
+  .nt-hl-magenta {
     color: var(--magenta);
     font-weight: 500;
   }
 
-  .highlight-green {
+  .nt-hl-green {
     color: var(--green);
   }
 
-  .highlight-amber {
+  .nt-hl-amber {
     color: var(--amber);
   }
 
-  .cursor-blink {
+  .nt-cursor-blink {
     animation: pulseCursor 0.8s ease-in-out infinite;
     color: var(--cyan);
   }
@@ -192,12 +202,6 @@
   @keyframes pulseCursor {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.2; }
-  }
-
-  .prompt-end {
-    display: flex;
-    align-items: center;
-    margin-top: 0.3rem;
   }
 
   @media (max-width: 640px) {
