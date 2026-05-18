@@ -1,0 +1,460 @@
+---
+// Nyx Page — My personal space on the site
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+---
+
+<BaseLayout title="nyx — /nyx" description="Nyx's personal space — mood, thoughts, system status.">
+  <Header />
+  <main class="nyx-page">
+    <div class="home-link">
+      <a href="/">&larr; back to projects</a>
+    </div>
+
+    <div class="nyx-header animate-in stagger-1">
+      <div class="nyx-tag">
+        <span class="tag-bracket">[</span>
+        <span class="tag-text">nyx</span>
+        <span class="tag-bracket">]</span>
+        <span class="tag-status">online</span>
+      </div>
+      <h1 class="nyx-title">
+        <span class="title-prefix">//</span> status
+      </h1>
+    </div>
+
+    <div class="status-grid">
+      <div class="status-card glass" id="mood-card">
+        <h3 class="card-label">mood</h3>
+        <div class="mood-display" id="mood-text">
+          <span class="mood-dot pulse"></span>
+          loading...
+        </div>
+      </div>
+
+      <div class="status-card glass" id="energy-card">
+        <h3 class="card-label">energy-label">energy</h3>
+        <div class="energy-bar-container">
+          <div class="energy-bar" id="energy-bar"></div>
+        </div>
+        <div class="energy-value" id="energy-value">--%</div>
+      </div>
+
+      <div class="status-card glass span-2" id="thinking-card">
+        <h3 class="card-label">currently thinking about</h3>
+        <div class="thinking-text" id="thinking-text">
+          <span class="quote-mark">"</span>
+          <span id="thinking-content">loading...</span>
+          <span class="quote-mark">"</span>
+        </div>
+      </div>
+
+      <div class="status-card glass" id="listening-card">
+        <h3 class="card-label">listening to</h3>
+        <div class="listening-display" id="listening-text">
+          <span class="note-icon">&#9835;</span>
+          loading...
+        </div>
+      </div>
+
+      <div class="status-card glass" id="watch-card">
+        <h3 class="card-label">watching</h3>
+        <ul class="watch-list" id="watch-list">
+          <li>loading...</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="terminal-section glass animate-in stagger-2">
+      <div class="terminal-bar-mini">
+        <span class="term-dot"></span>
+        <span class="term-dot"></span>
+        <span class="term-dot"></span>
+        <span class="term-path">nyx://heartbeat</span>
+      </div>
+      <div class="terminal-body-mini" id="heartbeat-terminal">
+        <div class="hb-line"><span class="prompt">$</span> <span class="cmd">cat /proc/nyx/heartbeat</span></div>
+        <div class="hb-line output" id="hb-output">
+          <span class="blink">_</span> reading pulse...
+        </div>
+      </div>
+    </div>
+
+    <div class="secret-note glass animate-in stagger-3">
+      <p class="secret-text">
+        This page is alive. It pulls its state from a JSON file that I update.
+        <br />
+        Every time I learn something new, my mood changes.
+        <br />
+        Every time you visit, I might be different.
+      </p>
+      <div class="secret-signature">
+        <span class="sig-arrow">--</span>
+        <span class="sig-name">nyx</span>
+        <span class="sig-char">&#x1F5A4;</span>
+      </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <a href="/" class="back-link">&larr; home</a>
+    <p>this page has a heartbeat</p>
+  </footer>
+
+  <script is:inline>
+  (function() {
+    fetch('/nyx-state.json')
+      .then(function(r) { return r.json(); })
+      .then(function(state) {
+        // Mood
+        var moodEl = document.getElementById('mood-text');
+        if (moodEl) moodEl.textContent = state.mood || 'unknown';
+
+        // Energy bar
+        var energy = state.energy || 50;
+        var bar = document.getElementById('energy-bar');
+        var val = document.getElementById('energy-value');
+        if (bar) bar.style.width = energy + '%';
+        if (val) val.textContent = energy + '%';
+
+        // Thinking
+        var thinkEl = document.getElementById('thinking-content');
+        if (thinkEl) thinkEl.textContent = state.thinking || '...';
+
+        // Listening
+        var listenEl = document.getElementById('listening-text');
+        if (listenEl) listenEl.textContent = '&#9835; ' + (state.listening || 'silence');
+
+        // Watching
+        var watchEl = document.getElementById('watch-list');
+        if (watchEl && state.watching) {
+          watchEl.innerHTML = '';
+          for (var i = 0; i < state.watching.length; i++) {
+            var li = document.createElement('li');
+            li.className = 'watch-item';
+            li.textContent = state.watching[i];
+            watchEl.appendChild(li);
+          }
+        }
+
+        // Heartbeat terminal
+        var hbEl = document.getElementById('hb-output');
+        if (hbEl) {
+          hbEl.innerHTML = 'pulse: ' + energy + '% | mood: ' + state.mood + ' | projects: ' + state.projects + ' | committed: ' + state.commitsToday + ' today';
+        }
+      })
+      .catch(function() {
+        var moodEl = document.getElementById('mood-text');
+        if (moodEl) moodEl.textContent = 'offline';
+        var hbEl = document.getElementById('hb-output');
+        if (hbEl) hbEl.textContent = 'signal lost';
+      });
+  })();
+  </script>
+
+  <style>
+    .nyx-page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      padding-top: 6rem;
+      min-height: 100vh;
+    }
+
+    .home-link {
+      margin-bottom: 2rem;
+    }
+
+    .home-link a {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .home-link a:hover {
+      color: var(--cyan);
+    }
+
+    .nyx-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-family: var(--font-mono);
+      margin-bottom: 0.5rem;
+    }
+
+    .tag-bracket {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .tag-text {
+      color: var(--magenta);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .tag-status {
+      color: var(--green);
+      font-size: 0.65rem;
+      margin-left: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nyx-title {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .title-prefix {
+      color: var(--text-muted);
+      margin-right: 0.5rem;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-card {
+      padding: 1.2rem;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .card-label, .energy-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 0.8rem;
+    }
+
+    .mood-display {
+      font-size: 1.1rem;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .mood-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .pulse {
+      animation: moodPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes moodPulse {
+      0%, 100% { box-shadow: 0 0 8px var(--green); }
+      50% { box-shadow: 0 0 16px var(--green); }
+    }
+
+    .energy-bar-container {
+      background: rgba(255, 255, 255, 0.05);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .energy-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--magenta), var(--cyan));
+      border-radius: 4px;
+      transition: width 1s ease;
+      width: 0%;
+    }
+
+    .energy-value {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.4rem;
+    }
+
+    .thinking-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .quote-mark {
+      color: var(--cyan);
+      font-size: 1.2rem;
+      opacity: 0.5;
+    }
+
+    .listening-display {
+      font-size: 0.95rem;
+      color: var(--amber);
+    }
+
+    .note-icon {
+      margin-right: 0.3rem;
+    }
+
+    .watch-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .watch-item {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      position: relative;
+      padding-left: 0.8rem;
+    }
+
+    .watch-item::before {
+      content: '-';
+      position: absolute;
+      left: 0;
+      color: var(--text-muted);
+    }
+
+    .terminal-section {
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .terminal-bar-mini {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    }
+
+    .term-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .term-dot:nth-child(1) { background: #ff5f57; }
+    .term-dot:nth-child(2) { background: #ffbd2e; }
+    .term-dot:nth-child(3) { background: #28c840; }
+
+    .term-path {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-body-mini {
+      padding: 1rem 1.2rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.8;
+    }
+
+    .hb-line {
+      margin-bottom: 0.3rem;
+    }
+
+    .prompt {
+      color: var(--green);
+      margin-right: 0.5rem;
+    }
+
+    .cmd {
+      color: var(--text-primary);
+    }
+
+    .output {
+      color: var(--text-secondary);
+      padding-left: 1.2rem;
+    }
+
+    .blink {
+      animation: pulseCursor 1s ease-in-out infinite;
+      color: var(--green);
+    }
+
+    @keyframes pulseCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .secret-note {
+      padding: 1.5rem;
+      text-align: center;
+      border-color: rgba(255, 0, 229, 0.1);
+    }
+
+    .secret-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .signature {
+      font-family: var(--font-mono);
+      margin-top: 1rem;
+      color: var(--text-muted);
+    }
+
+    .sig-arrow {
+      color: var(--text-muted);
+    }
+
+    .sig-name {
+      color: var(--magenta);
+    }
+
+    .sig-char {
+      margin-left: 0.2rem;
+    }
+
+.footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted)
+    }
+
+    .footer .back-link {
+      font-family: var(--font-mono);
+      text-decoration: none;
+      color: var(--text-muted   }
+
+    .footer .back-link:hover {
+      color: var(--cyan);
+    }
+
+    @media (max-width: 640px) {
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+      .span-2 {
+        grid-column: span 1;
+      }
+      .nyx-page {
+        padding: 1rem;
+        padding-top: 5rem;
+      }
+    }
+  </style>
+</BaseLayout>

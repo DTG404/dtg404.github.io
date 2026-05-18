@@ -1,0 +1,124 @@
+---
+// Soundscape — Synthwave ambient drone toggle
+---
+
+<div id="sound-toggle" class="sound-toggle" title="toggle ambient sound">
+  <span id="sound-icon" class="sound-icon">&#9835;</span>
+</div>
+
+<script is:inline>
+(function() {
+  var toggle = document.getElementById('sound-toggle');
+  var icon = document.getElementById('sound-icon');
+  var audioCtx = null;
+  var isPlaying = false;
+  var nodes = [];
+
+  function createDrone() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Low drone
+    var osc1 = audioCtx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1
+    var gain1 = audioCtx.createGain();
+    gain1.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 4);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start();
+    osc1.loop = true;
+    nodes.push(osc1, gain1);
+
+    // Pad
+    var osc2 = audioCtx.createOscillator();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
+    var gain2 = audioCtx.createGain();
+    gain2.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 4);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start();
+    nodes.push(osc2, gain2);
+
+    // High shimmer
+    var osc3 = audioCtx.createOscillator();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+    var gain3 = audioCtx.createGain();
+    gain3.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    gain3.gain.exponentialRampToValueAtTime(0.003, audioCtx.currentTime + 3);
+    osc3.connect(gain3);
+    gain3.connect(audioCtx.destination);
+    osc3.start();
+    nodes.push(osc3, gain3);
+  }
+
+  function stopDrone() {
+    for (var i = 0; i < nodes.length; i++) {
+      try { nodes[i].stop(); } catch(e) {}
+      try { nodes[i].disconnect(); } catch(e) {}
+    }
+    nodes = [];
+    if (audioCtx) {
+      audioCtx.close();
+      audioCtx = null;
+    }
+  }
+
+  toggle.addEventListener('click', function() {
+    if (isPlaying) {
+      stopDrone();
+      icon.innerHTML = '&#9835;';
+      toggle.classList.remove('active');
+      isPlaying = false;
+    } else {
+      createDrone();
+      icon.innerHTML = '&#9834;';
+      toggle.classList.add('active');
+      isPlaying = true;
+    }
+  });
+})();
+</script>
+
+<style>
+  .sound-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    backdrop-filter: var(--glass-blur);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .sound-toggle:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  }
+
+  .sound-toggle.active {
+    border-color: var(--magenta);
+    color: var(--magenta);
+    box-shadow: 0 0 15px rgba(255, 0, 229, 0.2);
+    animation: soundPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes soundPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 229, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(255, 0, 229, 0.4); }
+  }
+</style>

@@ -2,6 +2,7 @@
 // Base Layout — DTG404 Portfolio
 import ParticleField from '../components/ParticleField.astro';
 import EasterEggs from '../components/EasterEggs.astro';
+import Soundscape from '../components/Soundscape.astro';
 export interface Props {
   title: string;
   description: string;
@@ -155,6 +156,7 @@ const { title, description } = Astro.props;
     <ParticleField />
     <EasterEggs />
     <div class="crt-overlay"></div>
+    <Soundscape />
     <slot />
   </body>
 </html>
