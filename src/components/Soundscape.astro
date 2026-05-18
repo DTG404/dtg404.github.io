@@ -17,17 +17,28 @@
   function createDrone() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+    // Master gain and analyser (shared for visualizer)
+    var masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
+    var analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    masterGain.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    // Expose globally for AudioVisualizer
+    window.__synthCtx = audioCtx;
+    window.__synthAnalyser = analyser;
+
     // Low drone
     var osc1 = audioCtx.createOscillator();
     osc1.type = 'sine';
     osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1
     var gain1 = audioCtx.createGain();
-    gain1.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain1.gain.setValueAtTime(0.04, audioCtx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 4);
     osc1.connect(gain1);
-    gain1.connect(audioCtx.destination);
+    gain1.connect(masterGain);
     osc1.start();
-    osc1.loop = true;
     nodes.push(osc1, gain1);
 
     // Pad
@@ -35,10 +46,10 @@
     osc2.type = 'sawtooth';
     osc2.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
     var gain2 = audioCtx.createGain();
-    gain2.gain.setValueAtTime(0.015, audioCtx.currentTime);
+    gain2.gain.setValueAtTime(0.02, audioCtx.currentTime);
     gain2.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 4);
     osc2.connect(gain2);
-    gain2.connect(audioCtx.destination);
+    gain2.connect(masterGain);
     osc2.start();
     nodes.push(osc2, gain2);
 
@@ -47,12 +58,15 @@
     osc3.type = 'sine';
     osc3.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
     var gain3 = audioCtx.createGain();
-    gain3.gain.setValueAtTime(0.01, audioCtx.currentTime);
+    gain3.gain.setValueAtTime(0.015, audioCtx.currentTime);
     gain3.gain.exponentialRampToValueAtTime(0.003, audioCtx.currentTime + 3);
     osc3.connect(gain3);
-    gain3.connect(audioCtx.destination);
+    gain3.connect(masterGain);
     osc3.start();
     nodes.push(osc3, gain3);
+
+    // Fire event for AudioVisualizer
+    document.dispatchEvent(new CustomEvent('synth-toggle', { detail: { playing: true } }));
   }
 
   function stopDrone() {

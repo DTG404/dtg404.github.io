@@ -3,6 +3,9 @@
 import ParticleField from '../components/ParticleField.astro';
 import EasterEggs from '../components/EasterEggs.astro';
 import Soundscape from '../components/Soundscape.astro';
+import BootScreen from '../components/BootScreen.astro';
+import ConsoleEasterEgg from '../components/ConsoleEasterEgg.astro';
+import AudioVisualizer from '../components/AudioVisualizer.astro';
 export interface Props {
   title: string;
   description: string;
@@ -155,8 +158,11 @@ const { title, description } = Astro.props;
   <body class="bg-grid">
     <ParticleField />
     <EasterEggs />
+    <BootScreen />
+    <ConsoleEasterEgg />
     <div class="crt-overlay"></div>
     <Soundscape />
+    <AudioVisualizer />
     <slot />
   </body>
 </html>

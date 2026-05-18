@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import ProjectFilter from '../components/ProjectFilter.astro';
 import TerminalPanel from '../components/TerminalPanel.astro';
 import projects from '../data/projects.json';
 
@@ -25,7 +26,9 @@ const supporting = projects.filter(p => p.tier === 'supporting');
         <p class="section-subtitle">Open source work across AI agents, infrastructure, developer tools, and creative coding</p>
       </div>
 
-      <h3 class="tier-heading animate-in stagger-3">
+      <ProjectFilter />
+
+      <h3 class="tier-heading featured animate-in stagger-3" data-tier="featured">
         <span class="heading-dot cyan-dot"></span>
         Featured
       </h3>
@@ -43,6 +46,11 @@ const supporting = projects.filter(p => p.tier === 'supporting');
           />
         ))}
       </div>
+
+      <h3 class="tier-heading more animate-in stagger-3" data-tier="more">
+        <span class="heading-dot magenta-dot"></span>
+        More
+      </h3>
 
       <div class="project-grid">
         {supporting.map((p, i) => (
@@ -90,6 +98,95 @@ const supporting = projects.filter(p => p.tier === 'supporting');
       </div>
     </section>
   </main>
+
+  <script is:inline>
+  (function() {
+    // ---- SCROLL REVEAL ----
+    var revealItems = document.querySelectorAll('.project-card, .tier-heading, .contact-section, .section-header');
+    if ('IntersectionObserver' in window) {
+      var revealObserver = new IntersectionObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) {
+            entries[i].target.classList.add('revealed');
+            revealObserver.unobserve(entries[i].target);
+          }
+        }
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      for (var r = 0; r < revealItems.length; r++) {
+        revealObserver.observe(revealItems[r]);
+      }
+    } else {
+      // Fallback: just show everything
+      for (var r2 = 0; r2 < revealItems.length; r2++) {
+        revealItems[r2].classList.add('revealed');
+      }
+    }
+
+    // ---- LIVE GITHUB STATS ----
+    var cards = document.querySelectorAll('[data-repo]');
+    if (cards.length > 0) {
+      // Use a single API call per unique owner/repo
+      var repos = [];
+      for (var c = 0; c < cards.length; c++) {
+        var repo = cards[c].getAttribute('data-repo');
+        repos.push(repo);
+      }
+
+      // Also get commit counts from GitHub API
+      for (var ci = 0; ci < repos.length; ci++) {
+        (function(repoPath) {
+          var slug = repoPath.split('/')[1];
+          var starsEl = document.getElementById('stars-' + slug);
+          var commitsEl = document.getElementById('commits-' + slug);
+
+          if (!starsEl && !commitsEl) return;
+
+          // Fetch repo data
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'https://api.github.com/repos/' + repoPath, true);
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              var data = JSON.parse(xhr.responseText);
+              if (starsEl) starsEl.textContent = data.stargazers_count || 0;
+              // Could also show forks: data.forks_count
+            } else {
+              if (starsEl) starsEl.textContent = '?';
+            }
+          };
+          xhr.onerror = function() {
+            if (starsEl) starsEl.textContent = '?';
+          };
+          xhr.send();
+
+          // Fetch commit count (last 30 days count approximation)
+          var xhr2 = new XMLHttpRequest();
+          xhr2.open('GET', 'https://api.github.com/repos/' + repoPath + '/commits?per_page=1&page=1', true);
+          xhr2.onload = function() {
+            if (xhr2.status === 200) {
+              try {
+                var linkHeader = xhr2.getResponseHeader('Link');
+                var match = linkHeader && linkHeader.match(/page=(\d+)>; rel="last"/);
+                if (match && commitsEl) {
+                  commitsEl.textContent = match[1];
+                } else if (commitsEl) {
+                  commitsEl.textContent = '1+';
+                }
+              } catch(e) {
+                if (commitsEl) commitsEl.textContent = '?';
+              }
+            } else {
+              if (commitsEl) commitsEl.textContent = '?';
+            }
+          };
+          xhr2.onerror = function() {
+            if (commitsEl) commitsEl.textContent = '?';
+          };
+          xhr2.send();
+        })(repos[ci]);
+      }
+    }
+  })();
+  </script>
 
   <footer class="footer">
     <p>Built with Astro — hosted on GitHub Pages</p>
@@ -155,6 +252,21 @@ const supporting = projects.filter(p => p.tier === 'supporting');
 
     .contact-section {
       padding-bottom: 6rem;
+    }
+
+    .project-card,
+    .tier-heading,
+    .contact-section {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    }
+
+    .project-card.revealed,
+    .tier-heading.revealed,
+    .contact-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .contact-card {

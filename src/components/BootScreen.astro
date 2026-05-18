@@ -1,0 +1,262 @@
+---
+// BootScreen — Retro terminal boot sequence before the page appears
+// Only plays once per browser session (sessionStorage flag)
+---
+
+<div id="bootscreen" class="boot-overlay">
+  <div class="boot-terminal">
+    <div class="boot-bar">
+      <span class="boot-dot"></span>
+      <span class="boot-dot"></span>
+      <span class="boot-dot"></span>
+      <span class="boot-title">dtg404 bios v2.4.1</span>
+    </div>
+    <div class="boot-body" id="boot-body">
+      <div class="boot-line"><span class="boot-cyan">[OK]</span> Initializing DTG404 kernel... <span class="boot-status done">done</span></div>
+      <div class="boot-line"><span class="boot-cyan">[OK]</span> Memory check: <span class="boot-mem" id="boot-mem">0MB</span> / <span class="boot-mem">7.8GB</span> <span class="boot-status good">passed</span></div>
+      <div class="boot-line"><span class="boot-cyan">[OK]</span> Loading processor modules...</div>
+      <div class="boot-line boot-progress-line" id="boot-progress-line">
+        <span class="boot-cyan">[  ]</span>
+        <span class="boot-progress-bar"><span class="boot-progress-fill" id="boot-progress-fill"></span></span>
+        <span class="boot-percent" id="boot-percent">0%</span>
+      </div>
+      <div class="boot-line" id="boot-service-line" style="display:none">
+        <span class="boot-cyan">[OK]</span> <span id="boot-service-text">Starting services...</span>
+      </div>
+      <div class="boot-line" id="boot-service-2" style="display:none">
+        <span class="boot-cyan">[OK]</span> <span id="boot-service-text-2">Initializing network stack...</span>
+      </div>
+      <div class="boot-line" id="boot-service-3" style="display:none">
+        <span class="boot-cyan">[OK]</span> <span id="boot-service-text-3">Loading project data...</span>
+      </div>
+      <div class="boot-line" id="boot-service-4" style="display:none">
+        <span class="boot-cyan">[OK]</span> <span id="boot-service-text-4">Calibrating particle field...</span>
+      </div>
+      <div class="boot-line" id="boot-service-5" style="display:none">
+        <span class="boot-cyan">[OK]</span> <span id="boot-service-text-5">Waking Nyx...</span>
+      </div>
+      <div class="boot-line boot-final" id="boot-final" style="display:none">
+        <span class="boot-green">[DONE]</span> <span class="boot-welcome">WELCOME TO DTG404</span>
+      </div>
+      <div class="boot-line" id="boot-heartbeat" style="display:none">
+        <span class="boot-dim">heartbeat established. pulse stable. systems nominal.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+(function() {
+  // Only run once per session
+  if (sessionStorage.getItem('dtg404_booted')) {
+    var overlay = document.getElementById('bootscreen');
+    if (overlay) overlay.style.display = 'none';
+    return;
+  }
+
+  var memEl = document.getElementById('boot-mem');
+  var fillEl = document.getElementById('boot-progress-fill');
+  var pctEl = document.getElementById('boot-percent');
+  var progressLine = document.getElementById('boot-progress-line');
+  var serviceLine = document.getElementById('boot-service-line');
+  var serviceLine2 = document.getElementById('boot-service-2');
+  var serviceLine3 = document.getElementById('boot-service-3');
+  var serviceLine4 = document.getElementById('boot-service-4');
+  var serviceLine5 = document.getElementById('boot-service-5');
+  var finalLine = document.getElementById('boot-final');
+  var heartLine = document.getElementById('boot-heartbeat');
+
+  var memCheck = [128, 256, 512, 1024, 2048, 4096, 6144, 7987];
+  var memIdx = 0;
+  var prog = 0;
+  var skipServices = false;
+
+  // Boot memory
+  var memTimer = setInterval(function() {
+    if (memIdx < memCheck.length) {
+      memEl.textContent = memCheck[memIdx] + 'MB';
+      memIdx++;
+    } else {
+      clearInterval(memTimer);
+      // Start progress bar
+      var progTimer = setInterval(function() {
+        prog += Math.random() * 3 + 1;
+        if (prog > 100) prog = 100;
+        fillEl.style.width = prog + '%';
+        pctEl.textContent = Math.floor(prog) + '%';
+
+        if (prog >= 25 && !skipServices) {
+          skipServices = true;
+          serviceLine.style.display = 'block';
+          setTimeout(function() {
+            serviceLine2.style.display = 'block';
+          }, 400);
+          setTimeout(function() {
+            serviceLine3.style.display = 'block';
+          }, 800);
+          setTimeout(function() {
+            serviceLine4.style.display = 'block';
+          }, 1200);
+          setTimeout(function() {
+            serviceLine5.style.display = 'block';
+          }, 1600);
+        }
+
+        if (prog >= 100) {
+          clearInterval(progTimer);
+          progressLine.style.display = 'none';
+          finalLine.style.display = 'block';
+          setTimeout(function() {
+            heartLine.style.display = 'block';
+          }, 600);
+          // Fade out boot screen
+          setTimeout(function() {
+            sessionStorage.setItem('dtg404_booted', '1');
+            var overlay = document.getElementById('bootscreen');
+            overlay.classList.add('fade-out');
+            setTimeout(function() {
+              overlay.style.display = 'none';
+              overlay.classList.remove('fade-out');
+            }, 800);
+          }, 1200);
+        }
+      }, 80);
+    }
+  }, 120);
+})();
+</script>
+
+<style is:global>
+  .boot-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: #06060e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    transition: opacity 0.8s ease-out;
+  }
+
+  .boot-overlay.fade-out {
+    opacity: 0;
+  }
+
+  .boot-terminal {
+    width: 600px;
+    max-width: 90vw;
+    border: 1px solid rgba(0, 240, 255, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
+  }
+
+  .boot-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+  }
+
+  .boot-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .boot-dot:nth-child(1) { background: #ff5f57; }
+  .boot-dot:nth-child(2) { background: #ffbd2e; }
+  .boot-dot:nth-child(3) { background: #28c840; }
+
+  .boot-title {
+    margin-left: auto;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .boot-body {
+    padding: 1.2rem 1.5rem;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .boot-line {
+    opacity: 0;
+    animation: bootFadeIn 0.3s ease-out forwards;
+    margin-bottom: 2px;
+  }
+
+  @keyframes bootFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .boot-cyan { color: var(--cyan); }
+  .boot-green { color: var(--green); }
+  .boot-dim { color: var(--text-muted); }
+
+  .boot-status {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .boot-status.done { color: var(--text-muted); }
+  .boot-status.good { color: var(--green); }
+
+  .boot-mem { color: var(--amber); }
+
+  .boot-progress-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .boot-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .boot-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    border-radius: 3px;
+    transition: width 0.1s linear;
+  }
+
+  .boot-percent {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    width: 35px;
+    text-align: right;
+  }
+
+  .boot-welcome {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 3px;
+    animation: bootPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes bootPulse {
+    0%, 100% { text-shadow: 0 0 8px var(--green); }
+    50% { text-shadow: 0 0 20px var(--green), 0 0 40px rgba(0, 255, 136, 0.3); }
+  }
+
+  .boot-final {
+    margin-top: 6px;
+  }
+</style>

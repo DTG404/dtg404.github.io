@@ -1,0 +1,166 @@
+---
+// ProjectFilter — Search bar + category tabs for filtering project cards
+---
+
+<div class="filter-section" id="filter-section" data-astro-cid-filter>
+  <div class="filter-search-wrap">
+    <span class="filter-search-icon">&#x1F50E;</span>
+    <input type="text" id="filter-search" class="filter-search" placeholder="search projects..." autocomplete="off" spellcheck="false" />
+  </div>
+  <div class="filter-tabs" id="filter-tabs">
+    <button class="filter-tab active" data-cat="all">All</button>
+    <button class="filter-tab" data-cat="ai-agents">AI / Agents</button>
+    <button class="filter-tab" data-cat="dev-tools">Dev Tools</button>
+    <button class="filter-tab" data-cat="infrastructure">Infrastructure</button>
+    <button class="filter-tab" data-cat="creative">Creative</button>
+    <button class="filter-tab" data-cat="security">Security</button>
+  </div>
+</div>
+
+<script is:inline>
+(function() {
+  var searchInput = document.getElementById('filter-search');
+  var tabs = document.querySelectorAll('.filter-tab');
+  var cards = document.querySelectorAll('.project-card');
+
+  function filterProjects() {
+    var activeCat = document.querySelector('.filter-tab.active');
+    var cat = activeCat ? activeCat.getAttribute('data-cat') : 'all';
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var cardCat = card.getAttribute('data-category') || '';
+      var cardText = (card.textContent || '').toLowerCase();
+      var matchCat = cat === 'all' || cardCat === cat;
+      var matchSearch = !query || cardText.indexOf(query) !== -1;
+      card.style.display = (matchCat && matchSearch) ? '' : 'none';
+    }
+
+    // Show/hide the featured separator based on visibility
+    var featuredHeading = document.querySelector('.tier-heading.featured');
+    var moreHeading = document.querySelector('.tier-heading.more');
+    if (featuredHeading) {
+      var hasFeatured = false;
+      for (var j = 0; j < cards.length; j++) {
+        if (cards[j].style.display !== 'none' && cards[j].getAttribute('data-tier') === 'flagship') {
+          hasFeatured = true;
+          break;
+        }
+      }
+      featuredHeading.style.display = hasFeatured ? '' : 'none';
+    }
+    if (moreHeading) {
+      var hasMore = false;
+      for (var k = 0; k < cards.length; k++) {
+        if (cards[k].style.display !== 'none' && cards[k].getAttribute('data-tier') === 'supporting') {
+          hasMore = true;
+          break;
+        }
+      }
+      moreHeading.style.display = hasMore ? '' : 'none';
+    }
+  }
+
+  // Tab clicks
+  for (var t = 0; t < tabs.length; t++) {
+    tabs[t].addEventListener('click', function() {
+      for (var s = 0; s < tabs.length; s++) tabs[s].classList.remove('active');
+      this.classList.add('active');
+      filterProjects();
+    });
+  }
+
+  // Search input
+  if (searchInput) {
+    searchInput.addEventListener('input', filterProjects);
+  }
+
+  // Re-filter when cards have been loaded (for scroll reveals etc.)
+  if (window.MutationObserver) {
+    var observer = new MutationObserver(function() {
+      // Re-query cards in case DOM changed
+      cards = document.querySelectorAll('.project-card');
+    });
+    var grid = document.querySelector('.project-grid');
+    if (grid) observer.observe(grid, { childList: true, subtree: true });
+  }
+})();
+</script>
+
+<style>
+  .filter-section {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .filter-search-wrap {
+    position: relative;
+    max-width: 400px;
+  }
+
+  .filter-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    opacity: 0.3;
+  }
+
+  .filter-search {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .filter-search:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.05);
+  }
+
+  .filter-search::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-tab {
+    padding: 0.35rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-tab:hover {
+    border-color: rgba(0, 240, 255, 0.2);
+    color: var(--text-secondary);
+  }
+
+  .filter-tab.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0, 240, 255, 0.05);
+  }
+</style>

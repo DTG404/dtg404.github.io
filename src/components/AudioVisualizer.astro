@@ -1,0 +1,131 @@
+---
+// AudioVisualizer — Subtle canvas visualization responding to synthwave audio
+---
+
+<canvas id="audio-vis-canvas" class="audio-viz" width="300" height="40"></canvas>
+
+<script is:inline>
+(function() {
+  var canvas = document.getElementById('audio-vis-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var width = 300;
+  var height = 40;
+  canvas.width = width;
+  canvas.height = height;
+
+  var isPlaying = false;
+  var analyser = null;
+  var dataArray = null;
+  var animId = null;
+
+  function draw() {
+    var w = canvas.width;
+    var h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Get the shared analyser from Soundscape
+    if (!analyser && window.__synthAnalyser) {
+      analyser = window.__synthAnalyser;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    if (analyser && dataArray) {
+      try {
+        analyser.getByteFrequencyData(dataArray);
+      } catch(e) {
+        // analyser might be disconnected
+      }
+      var barCount = 16;
+      var barWidth = (w - (barCount - 1) * 2) / barCount;
+      var hasSignal = false;
+
+      for (var i = 0; i < barCount; i++) {
+        var val = dataArray[i] / 255;
+        if (val > 0.01) hasSignal = true;
+        var barH = val * h * 0.9;
+        var x = i * (barWidth + 2);
+        var y = h - barH;
+
+        var hue = 170 + val * 60;
+        var alpha = 0.2 + val * 0.5;
+        ctx.fillStyle = 'hsla(' + hue + ', 100%, 60%, ' + alpha + ')';
+        ctx.fillRect(x, y, barWidth, Math.max(barH, 1));
+      }
+
+      if (!hasSignal) {
+        // Idle pulse
+        var pulse = Math.sin(Date.now() / 800) * 0.12 + 0.12;
+        ctx.fillStyle = 'rgba(0, 240, 255, ' + pulse + ')';
+        ctx.fillRect(0, h - 2, w, 2);
+      }
+    } else {
+      // No analyser yet - idle
+      var pulse = Math.sin(Date.now() / 800) * 0.12 + 0.12;
+      ctx.fillStyle = 'rgba(0, 240, 255, ' + pulse + ')';
+      ctx.fillRect(0, h - 2, w, 2);
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  // Listen for synth toggle
+  document.addEventListener('synth-toggle', function(e) {
+    if (e.detail && e.detail.playing && window.__synthAnalyser) {
+      analyser = window.__synthAnalyser;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+  });
+
+  draw();
+
+  // When soundscape toggles, it fires a custom event
+  document.addEventListener('synth-toggle', function(e) {
+    isPlaying = e.detail && e.detail.playing;
+    if (isPlaying && !audioCtx) {
+      checkAudio();
+    }
+  });
+
+  // Resize observer
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function() {
+      var parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth || 300;
+      }
+    });
+    if (canvas.parentElement) ro.observe(canvas.parentElement);
+  }
+})();
+</script>
+
+<style is:global>
+  .audio-viz {
+    position: fixed;
+    bottom: 60px;
+    right: 24px;
+    width: 150px;
+    height: 24px;
+    z-index: 150;
+    border-radius: 4px;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+
+  .audio-viz:hover {
+    opacity: 0.8;
+  }
+
+  @media (max-width: 640px) {
+    .audio-viz {
+      width: 80px;
+      height: 16px;
+      bottom: 56px;
+      right: 12px;
+    }
+  }
+</style>

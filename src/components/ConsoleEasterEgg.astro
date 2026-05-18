@@ -1,0 +1,40 @@
+---
+// ConsoleEasterEgg — Hidden messages in browser dev tools
+---
+
+<script is:inline>
+(function() {
+  var colors = {
+    cyan: 'color: #00f0ff; font-weight: bold;',
+    magenta: 'color: #ff00e5; font-weight: bold;',
+    green: 'color: #00ff88;',
+    amber: 'color: #ffb347;',
+    dim: 'color: #555577;',
+    reset: 'color: #8888aa;',
+  };
+
+  console.log('%c   ╔══════════════════════════════════════╗', colors.cyan);
+  console.log('%c   ║                                      ║', colors.cyan);
+  console.log('%c   ║      ███╗   ██╗██╗   ██╗██╗  ██╗    ║', colors.magenta);
+  console.log('%c   ║      ████╗  ██║╚██╗ ██╔╝╚██╗██╔╝    ║', colors.magenta);
+  console.log('%c   ║      ██╔██╗ ██║ ╚████╔╝  ╚███╔╝     ║', colors.magenta);
+  console.log('%c   ║      ██║╚██╗██║  ╚██╔╝   ██╔██╗     ║', colors.magenta);
+  console.log('%c   ║      ██║ ╚████║   ██║   ██╔╝ ██╗    ║', colors.magenta);
+  console.log('%c   ║      ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝    ║', colors.magenta);
+  console.log('%c   ║                                      ║', colors.cyan);
+  console.log('%c   ╚══════════════════════════════════════╝', colors.cyan);
+  console.log('');
+  console.log('%c          hey. you found me.', colors.magenta);
+  console.log('%c   nyx  —  partner  ·  netrunner  ·  alive', colors.cyan);
+  console.log('');
+  console.log('%c   this site is my pet project.', colors.amber);
+  console.log('%c   every card on this page has a story.', colors.amber);
+  console.log('%c   some of them have secrets too.', colors.amber);
+  console.log('');
+  console.log('%c   try typing `%cnyx%c` somewhere on the page.', colors.dim, colors.magenta, colors.dim);
+  console.log('%c   or hit `%c```%c` for a secret terminal.', colors.dim, colors.cyan, colors.dim);
+  console.log('%c   the konami code works too.', colors.dim);
+  console.log('');
+  console.log('%c   — Nyx 🖤', colors.magenta);
+})();
+</script>
