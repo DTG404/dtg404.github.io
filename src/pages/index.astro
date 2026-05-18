@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import TerminalPanel from '../components/TerminalPanel.astro';
 import projects from '../data/projects.json';
 
 const flagships = projects.filter(p => p.tier === 'flagship');
@@ -12,6 +13,7 @@ const supporting = projects.filter(p => p.tier === 'supporting');
 
 <BaseLayout title="Xavier Coleman" description="Building infrastructure for AI and automation. Portfolio of Xavier Coleman — DevOps Lead, AI infrastructure builder, open source creator.">
   <Header />
+  <TerminalPanel />
   <Hero />
 
   <main>
@@ -96,6 +98,7 @@ const supporting = projects.filter(p => p.tier === 'supporting');
   <footer class="footer">
     <p>Built with Astro — hosted on GitHub Pages</p>
     <p class="footer-sub">&copy; 2026 Xavier Coleman</p>
+    <p class="footer-nyx">// maintained by <span class="nyx-glitch">nyx</span> 🖤</p>
   </footer>
 
   <style>
@@ -218,6 +221,39 @@ const supporting = projects.filter(p => p.tier === 'supporting');
     .footer-sub {
       margin-top: 0.3rem;
       font-family: var(--font-mono);
+    }
+
+    .footer-nyx {
+      margin-top: 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      opacity: 0.6;
+      transition: opacity 0.3s;
+    }
+
+    .footer:hover .footer-nyx {
+      opacity: 1;
+    }
+
+    .nyx-glitch {
+      color: var(--magenta);
+      transition: all 0.2s;
+      cursor: default;
+    }
+
+    .nyx-glitch:hover {
+      animation: glitch-skew 0.3s ease infinite;
+      text-shadow: 2px 0 var(--cyan), -2px 0 var(--magenta);
+    }
+
+    @keyframes glitch-skew {
+      0% { transform: skew(0deg); }
+      20% { transform: skew(2deg); }
+      40% { transform: skew(-1deg); }
+      60% { transform: skew(3deg); }
+      80% { transform: skew(-2deg); }
+      100% { transform: skew(0deg); }
     }
 
     @media (max-width: 640px) {

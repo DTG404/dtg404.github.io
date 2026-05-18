@@ -1,0 +1,120 @@
+---
+// ParticleField — Ambient data stream particles behind the hero
+---
+
+<canvas id="particle-canvas" class="particle-canvas"></canvas>
+
+<script is:inline>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let mouseX = -1000;
+  let mouseY = -1000;
+  let animId = null;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initParticles() {
+    particles = [];
+    const count = Math.min(Math.floor(window.innerWidth * 0.08), 80);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5 + 0.15,
+        size: Math.random() * 2 + 0.5,
+        hue: Math.random() > 0.6 ? 300 : 185, // magenta or cyan
+        alpha: Math.random() * 0.5 + 0.2,
+        life: Math.random() * 300 + 100,
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life--;
+
+      // Mouse repulsion
+      const dx = p.x - mouseX;
+      const dy = p.y - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        p.x += dx * 0.02;
+        p.y += dy * 0.02;
+      }
+
+      if (p.life <= 0 || p.x < -20 || p.x > canvas.width + 20 || p.y < -20 || p.y > canvas.height + 20) {
+        particles[i] = {
+          x: Math.random() * canvas.width,
+          y: -10,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: Math.random() * 0.3 + 0.1,
+          size: Math.random() * 2 + 0.5,
+          hue: Math.random() > 0.6 ? 300 : 185,
+          alpha: Math.random() * 0.5 + 0.2,
+          life: Math.random() * 300 + 100,
+        };
+        continue;
+      }
+
+      const color = p.hue === 185 ? '0, 240, 255' : '255, 0, 229';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color}, ${p.alpha})`;
+      ctx.fill();
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${color}, ${p.alpha * 0.08})`;
+      ctx.fill();
+    }
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', function() {
+    resize();
+    initParticles();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches[0]) {
+      mouseX = e.touches[0].clientX;
+      mouseY = e.touches[0].clientY;
+    }
+  });
+
+  resize();
+  initParticles();
+  draw();
+})();
+</script>
+
+<style>
+  .particle-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.7;
+  }
+</style>
