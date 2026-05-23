@@ -1,6 +1,6 @@
 ---
 // Cyberdeck Dashboard — Live system HUD for Nyx's VPS
-// WebSocket client connecting to the data server on port 8765
+// Connects to the data server via WebSocket (primary) or HTTP polling (fallback)
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 ---
@@ -40,7 +40,6 @@ import Header from '../components/Header.astro';
         </div>
         <div class="card-meta">
           <span id="cpu-count">-- cores</span>
-          <span id="cpu-freq">-- MHz</span>
         </div>
       </div>
 
@@ -65,33 +64,28 @@ import Header from '../components/Header.astro';
       <div class="hud-card glass">
         <div class="card-header">
           <span class="card-icon">&#x21C5;</span>
-          <span class="card-label">SWAP</span>
-        </div>
-        <div class="card-value" id="swap-percent">--%</div>
-        <div class="card-bar">
-          <div class="bar-fill bar-amber" id="swap-bar" style="width: 0%"></div>
-        </div>
-        <div class="card-meta">
-          <span id="swap-used">-- GB</span>
-          <span>/</span>
-          <span id="swap-total">-- GB</span>
-        </div>
-      </div>
-
-      <!-- DISK -->
-      <div class="hud-card glass">
-        <div class="card-header">
-          <span class="card-icon">&#x25A3;</span>
           <span class="card-label">DISK</span>
         </div>
         <div class="card-value" id="disk-percent">--%</div>
         <div class="card-bar">
-          <div class="bar-fill bar-green" id="disk-bar" style="width: 0%"></div>
+          <div class="bar-fill bar-amber" id="disk-bar" style="width: 0%"></div>
         </div>
         <div class="card-meta">
           <span id="disk-used">-- GB</span>
           <span>/</span>
           <span id="disk-total">-- GB</span>
+        </div>
+      </div>
+
+      <!-- NET -->
+      <div class="hud-card glass">
+        <div class="card-header">
+          <span class="card-icon">&#x25A3;</span>
+          <span class="card-label">NET</span>
+        </div>
+        <div class="card-value" id="net-io">-- / --</div>
+        <div class="card-meta" style="margin-top: 10px;">
+          <span>TX / RX</span>
         </div>
       </div>
     </div>
@@ -132,33 +126,9 @@ import Header from '../components/Header.astro';
             <span class="state-label">mood</span>
             <span class="state-value mood-text" id="mood-val">--</span>
           </div>
-          <div class="state-row">
+          <div class="state-row mono-row">
             <span class="state-label">monologue</span>
             <span class="state-value mono-text" id="monologue-val">--</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DATA ROW 2: Network -->
-    <div class="data-row animate-in stagger-3">
-      <div class="data-panel glass" style="flex: 1;">
-        <div class="panel-header">
-          <span class="section-tag">03</span>
-          <h2 class="section-title">// network</h2>
-        </div>
-        <div class="panel-body net-body" id="network-data">
-          <div class="net-row">
-            <span class="net-label">Bytes Sent</span>
-            <span class="net-value" id="net-sent">--</span>
-          </div>
-          <div class="net-row">
-            <span class="net-label">Bytes Received</span>
-            <span class="net-value" id="net-recv">--</span>
-          </div>
-          <div class="net-row">
-            <span class="net-label">Active Connections</span>
-            <span class="net-value" id="net-conns">--</span>
           </div>
         </div>
       </div>
@@ -265,7 +235,7 @@ import Header from '../components/Header.astro';
   }
   .card-value {
     font-family: var(--font-mono);
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     margin-bottom: 10px;
   }
@@ -398,18 +368,9 @@ import Header from '../components/Header.astro';
     white-space: nowrap;
     min-width: 0;
   }
-
-  /* Network */
-  .net-body { display: flex; flex-direction: column; gap: 6px; }
-  .net-row {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 4px 0;
+  .mono-row .state-value {
+    min-width: 0;
   }
-  .net-label { color: var(--text-muted); }
-  .net-value { color: var(--green); }
 
   /* Animations */
   .animate-in {
@@ -424,9 +385,6 @@ import Header from '../components/Header.astro';
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Glass glow */
-  .glow-cyan { box-shadow: 0 0 20px rgba(0,240,255,0.05); }
-
   @media (max-width: 800px) {
     .hud-grid { grid-template-columns: repeat(2, 1fr); }
     .data-row { flex-direction: column; }
@@ -440,18 +398,22 @@ import Header from '../components/Header.astro';
 
 <script>
 (function() {
-  const WS_URL = 'ws://177.7.50.53:8765';
+  // Connection targets — try Tailscale Funnel first (wss:// with TLS),
+  // fall back to direct IP (ws:// without TLS, may be blocked on HTTPS pages)
   const AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
   const RECONNECT_DELAY = 3000;
+
+  // Primary: Tailscale Funnel (wss:// with auto TLS — needs Funnel enabled in admin console)
+  // Fallback: direct IP (ws:// — works on HTTP pages, blocked on HTTPS due to mixed content)
+  var WS_URLS = [
+    'wss://srv1630958.tailscale.ts.net/',
+    'ws://177.7.50.53:8765'
+  ];
 
   const statusEl = document.getElementById('connection-status');
   let ws = null;
   let reconnectTimer = null;
-
-  function setStatus(state) {
-    statusEl.textContent = state;
-    statusEl.className = 'status-indicator ' + state;
-  }
+  var urlIndex = 0;
 
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -460,117 +422,120 @@ import Header from '../components/Header.astro';
     return (bytes / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0) + ' ' + units[i];
   }
 
+  function setStatus(state) {
+    statusEl.textContent = state;
+    statusEl.className = 'status-indicator ' + state;
+  }
+
   function updateUI(data) {
+    // Navigate the actual server payload structure:
+    // { type: "cyberdeck_update", system: { cpu, memory, disk, network, top_processes }, nyx: { boredom, monologue } }
+
+    var sys = data.system || data;
+    var nyx = data.nyx || {};
+
     // CPU
-    const cpuPct = data.cpu?.percent ?? 0;
+    var cpu = sys.cpu || {};
+    var cpuPct = cpu.percent || 0;
     document.getElementById('cpu-percent').textContent = cpuPct.toFixed(1) + '%';
     document.getElementById('cpu-bar').style.width = Math.min(cpuPct, 100) + '%';
-    document.getElementById('cpu-count').textContent = (data.cpu?.cores ?? '?') + ' cores';
-    document.getElementById('cpu-freq').textContent = (data.cpu?.freq_current ?? 0).toFixed(0) + ' MHz';
+    document.getElementById('cpu-count').textContent = (cpu.count || '?') + ' cores';
 
-    // RAM
-    const mem = data.memory;
-    if (mem) {
-      const ramPct = mem.ram_percent ?? 0;
-      document.getElementById('ram-percent').textContent = ramPct.toFixed(1) + '%';
-      document.getElementById('ram-bar').style.width = ramPct + '%';
-      document.getElementById('ram-used').textContent = (mem.ram_used_gb ?? 0).toFixed(1) + ' GB';
-      document.getElementById('ram-total').textContent = (mem.ram_total_gb ?? 0).toFixed(1) + ' GB';
-    }
-
-    // Swap
-    if (mem) {
-      const swapPct = mem.swap_percent ?? 0;
-      document.getElementById('swap-percent').textContent = swapPct.toFixed(1) + '%';
-      document.getElementById('swap-bar').style.width = swapPct + '%';
-      document.getElementById('swap-used').textContent = (mem.swap_used_gb ?? 0).toFixed(2) + ' GB';
-      document.getElementById('swap-total').textContent = (mem.swap_total_gb ?? 0).toFixed(2) + ' GB';
-    }
+    // Memory
+    var mem = sys.memory || {};
+    var ramPct = mem.percent || 0;
+    document.getElementById('ram-percent').textContent = ramPct.toFixed(1) + '%';
+    document.getElementById('ram-bar').style.width = ramPct + '%';
+    document.getElementById('ram-used').textContent = (mem.used_gb || 0).toFixed(1) + ' GB';
+    document.getElementById('ram-total').textContent = (mem.total_gb || 0).toFixed(1) + ' GB';
 
     // Disk
-    const disk = data.disk;
-    if (disk) {
-      const diskPct = disk.percent ?? 0;
-      document.getElementById('disk-percent').textContent = diskPct.toFixed(1) + '%';
-      document.getElementById('disk-bar').style.width = diskPct + '%';
-      document.getElementById('disk-used').textContent = (disk.used_gb ?? 0).toFixed(1) + ' GB';
-      document.getElementById('disk-total').textContent = (disk.total_gb ?? 0).toFixed(1) + ' GB';
-    }
+    var disk = sys.disk || {};
+    var diskPct = disk.percent || 0;
+    document.getElementById('disk-percent').textContent = diskPct.toFixed(1) + '%';
+    document.getElementById('disk-bar').style.width = diskPct + '%';
+    document.getElementById('disk-used').textContent = (disk.used_gb || 0).toFixed(1) + ' GB';
+    document.getElementById('disk-total').textContent = (disk.total_gb || 0).toFixed(1) + ' GB';
+
+    // Network
+    var net = sys.network || {};
+    document.getElementById('net-io').textContent = formatBytes(net.bytes_sent || 0) + ' / ' + formatBytes(net.bytes_recv || 0);
 
     // Processes
-    const procContainer = document.getElementById('processes-list');
-    if (data.processes && data.processes.length > 0) {
-      let html = `<div class="process-row process-header">
-        <span class="proc-cpu">CPU%</span>
-        <span class="proc-mem">MEM%</span>
-        <span class="proc-name">NAME</span>
-      </div>`;
-      data.processes.slice(0, 10).forEach(p => {
-        html += `<div class="process-row process-item">
-          <span class="proc-cpu">${(p.cpu_percent ?? 0).toFixed(1)}</span>
-          <span class="proc-mem">${(p.memory_percent ?? 0).toFixed(1)}</span>
-          <span class="proc-name">${p.name || '?'}</span>
-        </div>`;
+    var procs = sys.top_processes || [];
+    var procContainer = document.getElementById('processes-list');
+    if (procs.length > 0) {
+      var html = '<div class="process-row process-header">' +
+        '<span class="proc-cpu">CPU%</span>' +
+        '<span class="proc-mem">MEM%</span>' +
+        '<span class="proc-name">NAME</span>' +
+        '</div>';
+      procs.slice(0, 10).forEach(function(p) {
+        html += '<div class="process-row process-item">' +
+          '<span class="proc-cpu">' + (p.cpu || p.cpu_percent || 0).toFixed(1) + '</span>' +
+          '<span class="proc-mem">' + (p.mem || p.memory_percent || 0).toFixed(1) + '</span>' +
+          '<span class="proc-name">' + (p.name || '?') + '</span>' +
+          '</div>';
       });
       procContainer.innerHTML = html;
     }
 
     // Nyx State
-    const nyx = data.nyx_state || data.nyx || {};
-    const bVal = nyx.boredom ?? nyx.boredom_level ?? 0;
+    var boredom = nyx.boredom || {};
+    var bVal = boredom.level || 0;
     document.getElementById('boredom-bar').style.width = bVal + '%';
     document.getElementById('boredom-val').textContent = bVal + '%';
-    document.getElementById('mood-val').textContent = nyx.mood || nyx.current_mood || '--';
-    document.getElementById('monologue-val').textContent = nyx.monologue || nyx.monologue_snippet || '--';
 
-    // Network
-    const net = data.network;
-    if (net) {
-      document.getElementById('net-sent').textContent = formatBytes(net.bytes_sent ?? 0);
-      document.getElementById('net-recv').textContent = formatBytes(net.bytes_recv ?? 0);
-      document.getElementById('net-conns').textContent = (net.connections ?? '?').toString();
-    }
+    var monologue = nyx.monologue || {};
+    document.getElementById('mood-val').textContent = monologue.mood || '--';
+    document.getElementById('monologue-val').textContent = monologue.text || '--';
   }
 
   function connect() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
-    setStatus('connecting');
-    ws = new WebSocket(WS_URL);
+    if (urlIndex >= WS_URLS.length) {
+      setStatus('disconnected');
+      statusEl.textContent = 'no endpoints';
+      reconnectTimer = setTimeout(function() { urlIndex = 0; connect(); }, 10000);
+      return;
+    }
 
-    ws.onopen = () => {
+    setStatus('connecting');
+    statusEl.textContent = 'connecting [' + (urlIndex + 1) + '/' + WS_URLS.length + ']';
+
+    ws = new WebSocket(WS_URLS[urlIndex]);
+
+    ws.onopen = function() {
       setStatus('connected');
-      // Send auth
-      ws.send(JSON.stringify({ type: 'auth', token: AUTH_TOKEN }));
+      urlIndex = 0; // reset on successful connection
+      ws.send(JSON.stringify({ token: AUTH_TOKEN }));
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = function(event) {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'auth_ok') {
-          // Authentication confirmed
-          return;
-        }
-        if (data.type === 'data' || data.cpu) {
+        var data = JSON.parse(event.data);
+        if (data.type === 'cyberdeck_update' || data.system) {
           updateUI(data);
         }
       } catch (e) {
-        // Parse error, skip
+        // parse error, skip
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = function() {
       setStatus('disconnected');
       ws = null;
-      reconnectTimer = setTimeout(connect, RECONNECT_DELAY);
+      // Try next URL on failure
+      urlIndex++;
+      reconnectTimer = setTimeout(connect, 1000);
     };
 
-    ws.onerror = () => {
+    ws.onerror = function() {
       ws && ws.close();
     };
   }
 
-  // Start connection when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', connect);
   } else {
