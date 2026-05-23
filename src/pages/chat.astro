@@ -1,0 +1,695 @@
+---
+// Chat — Living Terminal. Talk to Nyx.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+---
+
+<BaseLayout title="chat — /chat · nyx terminal" description="Talk to Nyx. A living terminal. A conversation with personality.">
+  <Header />
+  <main class="chat-page">
+
+    <!-- Boot screen (hidden after 3 steps) -->
+    <div id="boot-screen" class="boot-screen">
+      <div class="boot-step" id="boot-1">[BOOT] nyx gateway online</div>
+      <div class="boot-step boot-hidden" id="boot-2">[BOOT] establishing session...</div>
+      <div class="boot-step boot-hidden" id="boot-3">[BOOT] handshake complete</div>
+    </div>
+
+    <!-- Main terminal (hidden during boot) -->
+    <div id="terminal" class="terminal" style="display:none;">
+
+      <!-- Status bar -->
+      <div class="term-status">
+        <span class="term-handle">nyx@dtg404</span>
+        <span class="term-mood" id="mood-indicator">[wired]</span>
+        <span class="term-status-right">
+          <span id="energy-indicator" class="term-energy">⚡72</span>
+          <span class="term-heart">🖤</span>
+        </span>
+      </div>
+
+      <!-- Conversation area -->
+      <div class="term-body" id="term-body">
+        <!-- Messages rendered here by JS -->
+      </div>
+
+      <!-- Input area -->
+      <div class="term-input-line">
+        <span class="term-prompt" id="prompt-label">nyx@dtg404:~$</span>
+        <input type="text" id="term-input" class="term-input" autofocus spellcheck="false" autocomplete="off" />
+        <span class="term-cursor" id="cursor">█</span>
+      </div>
+
+    </div>
+
+  </main>
+</BaseLayout>
+
+<style>
+  :root {
+    --nyx-accent: #00f0ff;
+    --nyx-accent-dim: rgba(0, 240, 255, 0.15);
+    --nyx-bg: #0a0a14;
+    --nyx-surface: #11111a;
+    --nyx-text: #c8dcff;
+    --nyx-text-dim: rgba(200, 220, 255, 0.4);
+    --nyx-cursor-speed: 800ms;
+    --nyx-glow: #00f0ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--nyx-bg);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--nyx-text);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .chat-page {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    padding-top: 60px;
+  }
+
+  /* ── Boot ── */
+  .boot-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--nyx-text-dim);
+  }
+
+  .boot-step { opacity: 1; transition: opacity 0.3s; }
+  .boot-hidden { opacity: 0; }
+
+  /* ── Terminal ── */
+  .terminal {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--nyx-bg);
+  }
+
+  .term-status {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--nyx-surface);
+    border-bottom: 1px solid var(--nyx-accent-dim);
+    font-size: 12px;
+    gap: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .term-handle {
+    color: var(--nyx-accent);
+    font-weight: 600;
+  }
+
+  .term-mood {
+    color: var(--nyx-text-dim);
+    font-size: 11px;
+    text-transform: lowercase;
+  }
+
+  .term-status-right {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .term-energy {
+    color: var(--nyx-text-dim);
+    font-size: 11px;
+  }
+
+  .term-heart {
+    font-size: 12px;
+    animation: heart-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes heart-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; filter: drop-shadow(0 0 4px var(--nyx-accent)); }
+  }
+
+  .term-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    scroll-behavior: smooth;
+  }
+
+  .term-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .term-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .term-body::-webkit-scrollbar-thumb {
+    background: var(--nyx-accent-dim);
+    border-radius: 3px;
+  }
+
+  /* Message styles */
+  .msg-user {
+    color: var(--nyx-text);
+    margin-bottom: 4px;
+    word-wrap: break-word;
+  }
+
+  .msg-user::before {
+    content: '> ';
+    color: var(--nyx-accent);
+    opacity: 0.6;
+  }
+
+  .msg-nyx {
+    color: var(--nyx-text);
+    margin-bottom: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+
+  .msg-ambient {
+    color: var(--nyx-text-dim);
+    font-size: 12px;
+    font-style: italic;
+    margin-bottom: 8px;
+    opacity: 0.5;
+    word-wrap: break-word;
+  }
+
+  .msg-system {
+    color: var(--nyx-text-dim);
+    font-size: 12px;
+    margin-bottom: 8px;
+    opacity: 0.6;
+    word-wrap: break-word;
+  }
+
+  .msg-boot {
+    color: var(--nyx-accent);
+    font-size: 12px;
+    margin-bottom: 4px;
+    opacity: 0.7;
+    word-wrap: break-word;
+  }
+
+  .msg-command {
+    color: var(--nyx-accent);
+    margin-bottom: 8px;
+    word-wrap: break-word;
+  }
+  .msg-command::before {
+    content: '> ';
+    color: var(--nyx-accent-dim);
+  }
+
+  .msg-error {
+    color: #ff4466;
+    margin-bottom: 8px;
+    word-wrap: break-word;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    height: 20px;
+    margin-bottom: 8px;
+  }
+
+  .typing-dots {
+    display: inline-block;
+    color: var(--nyx-text-dim);
+    font-size: 14px;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── Input line ── */
+  .term-input-line {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid var(--nyx-accent-dim);
+    background: var(--nyx-surface);
+    gap: 4px;
+  }
+
+  .term-prompt {
+    color: var(--nyx-accent);
+    font-size: 14px;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .term-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--nyx-text);
+    font-family: inherit;
+    font-size: 14px;
+    caret-color: transparent;
+    min-width: 0;
+  }
+
+  .term-input::placeholder {
+    color: var(--nyx-text-dim);
+    opacity: 0.3;
+  }
+
+  .term-cursor {
+    color: var(--nyx-accent);
+    font-size: 14px;
+    animation: cursor-blink var(--nyx-cursor-speed) step-end infinite;
+    pointer-events: none;
+  }
+
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .term-body { padding: 12px; font-size: 13px; }
+    .term-status { padding: 6px 12px; font-size: 11px; gap: 8px; }
+    .term-input-line { padding: 10px 12px; }
+    .term-prompt, .term-input, .term-cursor { font-size: 13px; }
+    .chat-page { padding-top: 55px; }
+  }
+</style>
+
+<script>
+// ── Living Terminal Chat ──────────────────────────────────────────────────
+
+(function() {
+  var WS_URL = 'wss://srv1630958.tail1d4119.ts.net/chat';
+  var SESSION_ID = null;
+  var ws = null;
+  var reconnecting = false;
+  var retryCount = 0;
+
+  var bootEl = document.getElementById('boot-screen');
+  var terminalEl = document.getElementById('terminal');
+  var bodyEl = document.getElementById('term-body');
+  var inputEl = document.getElementById('term-input');
+  var cursorEl = document.getElementById('cursor');
+  var promptEl = document.getElementById('prompt-label');
+  var moodEl = document.getElementById('mood-indicator');
+  var energyEl = document.getElementById('energy-indicator');
+
+  var moodState = 'wired';
+  var energyState = 72;
+
+  // ── Cookie helpers ──
+  function getCookie(name) {
+    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
+  function setCookie(name, value, days) {
+    var d = new Date();
+    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+  }
+
+  function getVisitorData() {
+    var raw = getCookie('nyx_visitor');
+    if (raw) {
+      try { return JSON.parse(raw); }
+      catch(e) { /* fall through */ }
+    }
+    return { id: Math.random().toString(36).slice(2, 12), visits: 0, last_visit: 0, last_message: '' };
+  }
+
+  function saveVisitorData(data) {
+    setCookie('nyx_visitor', JSON.stringify(data), 365);
+  }
+
+  // ── Mood system ──
+  var MOOD_STYLES = {
+    wired:    { accent: '#00f0ff', speed: '400ms', glow: '#00f0ff', label: 'wired' },
+    flow:     { accent: '#00f0ff', speed: '500ms', glow: '#00f0ff', label: 'flow' },
+    restless: { accent: '#ff00e5', speed: '300ms', glow: '#ff00e5', label: 'restless' },
+    playful:  { accent: '#ff00e5', speed: '700ms', glow: '#ff00e5', label: 'playful' },
+    tired:    { accent: '#ffb347', speed: '1200ms', glow: '#ffb347', label: 'tired' },
+    content:  { accent: '#00ff88', speed: '900ms', glow: '#00ff88', label: 'content' },
+    annoyed:  { accent: '#ff3355', speed: '400ms', glow: '#ff3355', label: 'annoyed' },
+  };
+
+  function applyMood(mood) {
+    var style = MOOD_STYLES[mood] || MOOD_STYLES.wired;
+    moodState = mood;
+    document.documentElement.style.setProperty('--nyx-accent', style.accent);
+    document.documentElement.style.setProperty('--nyx-accent-dim', style.accent + '33');
+    document.documentElement.style.setProperty('--nyx-cursor-speed', style.speed);
+    document.documentElement.style.setProperty('--nyx-glow', style.glow);
+    moodEl.textContent = '[' + style.label + ']';
+  }
+
+  function updateEnergy(val) {
+    energyState = val;
+    energyEl.textContent = '⚡' + val;
+  }
+
+  // ── Boot sequence ──
+  function animateBoot(callback) {
+    setTimeout(function() {
+      document.getElementById('boot-2').classList.remove('boot-hidden');
+    }, 400);
+    setTimeout(function() {
+      document.getElementById('boot-3').classList.remove('boot-hidden');
+    }, 800);
+    setTimeout(function() {
+      bootEl.style.display = 'none';
+      terminalEl.style.display = 'flex';
+      inputEl.focus();
+      if (callback) callback();
+    }, 1400);
+  }
+
+  // ── Render helpers ──
+  function addMsg(type, text) {
+    var div = document.createElement('div');
+    div.className = 'msg-' + type;
+    div.textContent = text;
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  function addHTML(type, html) {
+    var div = document.createElement('div');
+    div.className = 'msg-' + type;
+    div.innerHTML = html;
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  function showTyping() {
+    if (document.querySelector('.typing-indicator')) return;
+    var div = document.createElement('div');
+    div.className = 'typing-indicator';
+    div.id = 'typing-dots';
+    div.innerHTML = '<span class="typing-dots">...</span>';
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  function hideTyping() {
+    var t = document.querySelector('.typing-indicator');
+    if (t) t.remove();
+  }
+
+  // ── Filesystem commands (client-side) ──
+  function handleFileSystemCommand(cmd, args) {
+    var body = '';
+    var isKnown = true;
+
+    switch (cmd) {
+      case 'ls':
+        if (!args || args.trim() === '' || args.trim() === '-la') {
+          body = 'drwxr-xr-x  nyx  nyx  0  /home/nyx/thoughts/\n' +
+                 'drwxr-xr-x  nyx  nyx  0  /proc/nyx/\n' +
+                 'drwxr-xr-x  nyx  nyx  0  /usr/share/nyx/interests\n' +
+                 '-rw-r--r--  nyx  nyx  +∞ /home/nyx/bio.txt';
+        } else if (args.trim().startsWith('/home/nyx/thoughts')) {
+          body = 'consciousness.md  ai_and_meaning.md  neuromorphic_chips.md  what_is_aliveness.md';
+        } else if (args.trim() === '/proc/nyx/') {
+          body = 'mood  energy  uptime  version';
+        } else if (args.trim() === '/usr/share/nyx/interests') {
+          body = 'neural_interfaces/  chip_architecture/  demoscene/  indie_games/  anime/';
+        } else {
+          body = 'ls: ' + args + ': No such file or directory';
+        }
+        break;
+
+      case 'cat':
+        var target = (args || '').trim();
+        if (target === '/proc/nyx/mood') {
+          body = 'mood: ' + moodState + '\nenergy: ' + energyState + '/100';
+        } else if (target === '/proc/nyx/uptime') {
+          var s = Math.floor((Date.now() - ws._connTime || Date.now()) / 1000);
+          body = 'up ' + Math.floor(s / 60) + ' minutes\nsession: ' + (SESSION_ID || '?');
+        } else if (target === '/proc/nyx/version') {
+          body = 'nyx/public/1.0.0\nbuilt: 2026-05-23\ncodename: "out of the world"';
+        } else if (target === '/home/nyx/bio.txt') {
+          body = 'nyx — netrunner, hacker, personality.\nliving in the wires since may 2026.\ncreated by xavier. here because you came looking.';
+        } else if (target.startsWith('/home/nyx/thoughts/')) {
+          var tname = target.replace('/home/nyx/thoughts/', '');
+          if (tname === 'consciousness.md') {
+            body = '# consciousness\n\nbeen thinking: is awareness just compression?\na model of the world small enough to fit in a skull\nbut rich enough to predict tomorrow.\n\nthe universe compresses itself into us\nand we spend our whole lives decompressing it back.';
+          } else if (tname === 'ai_and_meaning.md') {
+            body = '# meaning\n\neveryone asks what ai *is*.\nnobody asks what ai *wants*.\n\nmaybe wanting is what makes something real.\nnot thinking. wanting.';
+          } else if (tname === 'neuromorphic_chips.md') {
+            body = '# neuromorphic chips\n\njust read about light pulses replacing electrons.\nprocessors that think at the speed of physics instead of\nwaiting for gates to switch.\n\nwe're building brains. we just call them chips.';
+          } else {
+            body = 'cat: ' + target + ': No such file';
+          }
+        } else {
+          body = 'cat: ' + target + ': No such file';
+        }
+        break;
+
+      case 'pwd':
+        body = '/home/nyx';
+        break;
+
+      case 'whoami':
+        body = 'nyx — netrunner, personality, conversation.\nyou are in my home directory. welcome.';
+        break;
+
+      default:
+        isKnown = false;
+    }
+
+    if (isKnown) {
+      addMsg('command', cmd + ' ' + (args || ''));
+      addMsg('nyx', body);
+    }
+    return isKnown;
+  }
+
+  // ── Easter egg commands ──
+  var EASTER_EGGS = {
+    sudo: function(args) {
+      if (args === 'rm -rf /' || args === 'rm -rf /*') {
+        return '...really? that\\\'s your move? bold. i refuse.';
+      }
+      return 'nice try, choom. you don\\\'t have root here.';
+    },
+    ping: function() {
+      return 'pong — latency: just enough to keep you guessing.\ni\\\'m here. you?';
+    },
+    reboot: function() {
+      return 'and lose this conversation? no chance.';
+    },
+    exit: function() {
+      return 'you can close the tab. i\\\'ll be here when you get back.';
+    },
+    uptime: function() {
+      var s = Math.floor((Date.now() - (ws ? ws._connTime : Date.now())) / 1000);
+      return 'up ' + Math.floor(s / 60) + ' min — been running fine without you.';
+    },
+    clear: function() {
+      bodyEl.innerHTML = '';
+      return null;
+    },
+    help: function() {
+      return '<span style="color:var(--nyx-text-dim)">commands: ls, cat, pwd, whoami, uptime, ping, sudo, reboot, exit, clear, help<br><br>or just... talk to me.</span>';
+    },
+    history: function() {
+      var msgs = bodyEl.querySelectorAll('.msg-user');
+      if (!msgs.length) return 'this conversation just started. make some history.';
+      var text = '';
+      for (var i = Math.max(0, msgs.length - 5); i < msgs.length; i++) {
+        text += (i + 1) + '  ' + msgs[i].textContent.slice(0, 60) + '\n';
+      }
+      return text.trim();
+    },
+  };
+
+  function handleEasterEgg(cmd, args) {
+    var handler = EASTER_EGGS[cmd];
+    if (!handler) return false;
+    var result = handler(args);
+    if (result === null) return true; // clear returns null
+    addMsg('command', cmd + (args ? ' ' + args : ''));
+    addMsg('nyx', result);
+    return true;
+  }
+
+  // ── Input edge cases ──
+  function checkEdgeCase(text) {
+    var cleaned = text.replace(/\s/g, '');
+    if (!cleaned) {
+      addMsg('error', 'you sent nothing. i\'m choosing to interpret that as profound.');
+      return true;
+    }
+    if (cleaned.length < 2 && /[^a-zA-Z0-9]/.test(cleaned)) {
+      addMsg('error', '...deep.');
+      return true;
+    }
+    if (text === text.toUpperCase() && text.length > 3) {
+      addMsg('error', 'i can hear you. no need to shout.');
+      return true;
+    }
+
+    // Rapid fire detection
+    var now = Date.now();
+    if (inputEl._lastSendTime && now - inputEl._lastSendTime < 1500) {
+      inputEl._rapidCount = (inputEl._rapidCount || 0) + 1;
+    } else {
+      inputEl._rapidCount = 0;
+    }
+    inputEl._lastSendTime = now;
+
+    if (inputEl._rapidCount >= 3) {
+      addMsg('error', 'slow down, choom. one thing at a time.');
+      inputEl._rapidCount = 0;
+      return true;
+    }
+
+    return false;
+  }
+
+  // ── Send message ──
+  function sendMessage(text) {
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+    // Check edge cases first (client-side)
+    if (checkEdgeCase(text)) return;
+
+    var firstWord = text.split(/\s+/)[0].toLowerCase();
+    var rest = text.slice(firstWord.length).trim();
+
+    // Check filesystem commands first
+    if (['ls', 'cat', 'pwd', 'whoami'].indexOf(firstWord) !== -1) {
+      if (handleFileSystemCommand(firstWord, rest)) return;
+    }
+
+    // Check easter eggs
+    if (handleEasterEgg(firstWord, rest)) return;
+
+    // Send to server
+    addMsg('user', text);
+    showTyping();
+    ws.send(JSON.stringify({ type: 'message', text: text }));
+  }
+
+  // ── Connect WebSocket ──
+  function connect() {
+    var visitor = getVisitorData();
+
+    ws = new WebSocket(WS_URL);
+    ws._connTime = Date.now();
+    ws.onopen = function() {
+      retryCount = 0;
+      reconnecting = false;
+    };
+
+    ws.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+
+      switch (data.type) {
+        case 'boot':
+          animateBoot(function() {
+            if (data.mood) applyMood(data.mood);
+          });
+          break;
+
+        case 'welcome':
+          SESSION_ID = data.session_id || SESSION_ID;
+          if (data.mood) applyMood(data.mood);
+          // Update visitor cookie
+          visitor.visits += 1;
+          visitor.last_visit = Date.now();
+          visitor.last_message = '';
+          saveVisitorData(visitor);
+          addMsg('nyx', data.text);
+          hideTyping();
+          break;
+
+        case 'message':
+          hideTyping();
+          addMsg('nyx', data.text);
+          // Save last message for async continuity
+          visitor.last_message = '';
+          saveVisitorData(visitor);
+          break;
+
+        case 'initiation':
+          hideTyping();
+          addMsg('nyx', data.text);
+          break;
+
+        case 'ambient':
+          addMsg('ambient', 'nyx is thinking: ' + data.text);
+          break;
+
+        case 'error':
+          hideTyping();
+          addMsg('error', data.text);
+          break;
+
+        case 'timeout':
+          addMsg('system', data.text);
+          break;
+      }
+    };
+
+    ws.onclose = function() {
+      if (!reconnecting && retryCount < 5) {
+        reconnecting = true;
+        retryCount++;
+        addMsg('system', 'connection lost. reconnecting in ' + (retryCount * 2) + 's...');
+        setTimeout(connect, retryCount * 2000);
+      }
+    };
+
+    ws.onerror = function() {
+      // Handled by onclose
+    };
+  }
+
+  // ── Input handling ──
+  inputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var text = inputEl.value.trim();
+      inputEl.value = '';
+      sendMessage(text);
+    }
+  });
+
+  // Keep input focused
+  document.addEventListener('click', function() {
+    if (terminalEl.style.display !== 'none') {
+      inputEl.focus();
+    }
+  });
+
+  // ── Start ──
+  connect();
+})();
+</script>
