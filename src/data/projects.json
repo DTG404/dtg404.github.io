@@ -6,39 +6,30 @@
     "description": "A futuristic financial research terminal with Liquid Glass UI, AI-powered analysis, and local-first architecture. Combines real-time market data, SEC EDGAR fundamentals, TA-Lib technical indicators, FRED macroeconomic data, news intelligence, and DeepSeek-generated thesis analysis into a single application.",
     "tier": "flagship",
     "category": "ai-agents",
-    "tech": [
-      "Python",
-      "FastAPI",
-      "Next.js",
-      "React",
-      "TypeScript",
-      "SQLAlchemy",
-      "Docker",
-      "DeepSeek",
-      "TA-Lib",
-      "Tailwind"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/equity-lens",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Python", "FastAPI", "Next.js", "React", "TypeScript", "SQLAlchemy", "Docker", "DeepSeek", "TA-Lib", "Tailwind"],
+    "links": { "github": "https://github.com/DTG404/equity-lens", "demo": null },
     "features": [
-      "SEC EDGAR fundamentals \u2014 revenue, net income, EPS, balance sheet, ratios",
-      "TA-Lib technicals \u2014 RSI, MACD, SMA/EMA, Bollinger Bands, ATR",
-      "FRED macroeconomic dashboard \u2014 9 economic indicators",
+      "SEC EDGAR fundamentals — revenue, net income, EPS, balance sheet, ratios",
+      "TA-Lib technicals — RSI, MACD, SMA/EMA, Bollinger Bands, ATR",
+      "FRED macroeconomic dashboard — 9 economic indicators",
       "AI thesis generation with bull/base/bear scenarios",
-      "TradingView Lightweight Charts",
-      "Stock screener \u2014 80-ticker universe with filters",
+      "TradingView Lightweight Charts for interactive charting",
+      "Stock screener — 80-ticker universe with multi-factor filters",
       "Portfolio P&L tracking with Alpaca broker sync",
       "Alert center with Discord and email notifications",
       "Insider trading (Form 4) and institutional ownership (13F)",
-      "SEC filings browser with DCF valuation"
+      "SEC filings browser with integrated DCF valuation"
     ],
     "highlights": [
       "Liquid Glass design system with cosmic eclipse background",
       "Provider factory for pluggable data sources",
       "Full CI/CD with gitleaks security scanning"
-    ]
+    ],
+    "architecture": "FastAPI backend serves data from multiple providers (SEC EDGAR, FRED, Alpaca, TA-Lib) through a unified API. The Next.js frontend renders a glass-morphism terminal UI with TradingView charts. AI thesis generation runs through DeepSeek via OpenRouter, with streaming responses for real-time analysis. All data is cached locally via SQLAlchemy for offline access.",
+    "story": "Built because tracking personal investments across half a dozen platforms was unsustainable. Started as a simple portfolio tracker with Alpaca sync, then snowballed — added SEC filings after realizing how much signal is buried in 10-Ks, then FRED for macro context, then TA-Lib because technical analysis without indicators felt incomplete. The Liquid Glass UI was a happy accident — it started as a CyberPunk 2077-inspired experiment and became the identity of the whole project.",
+    "screenshots": [],
+    "related": ["pulse", "corvade"]
   },
   {
     "slug": "nexus",
@@ -47,28 +38,24 @@
     "description": "A CLI tool that gives AI agents persistent memory across sessions. One binary, no daemon, no dependencies beyond Go. Solves context loss between sessions by tracking projects, sessions, decisions, preferences, and learnings with semantic search.",
     "tier": "flagship",
     "category": "infrastructure",
-    "tech": [
-      "Go",
-      "SQLite",
-      "CLI",
-      "Semantic Search",
-      "FTS5"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/nexus",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Go", "SQLite", "CLI", "Semantic Search", "FTS5"],
+    "links": { "github": "https://github.com/DTG404/nexus", "demo": null },
     "features": [
       "Cross-session memory for AI coding agents",
       "Project and session tracking with semantic search",
       "Decision and preference learning over time",
-      "FTS5 full-text search with ranking",
+      "FTS5 full-text search with relevance ranking",
       "Single binary with zero runtime dependencies"
     ],
     "highlights": [
       "Go CLI with no runtime dependencies",
       "MCP server wrapper for Claude Code integration"
-    ]
+    ],
+    "architecture": "Go binary with embedded SQLite and FTS5 for full-text search. The CLI stores projects, sessions, decisions, preferences, and learnings as structured records. Semantic search uses SQLite's built-in FTS5 with BM25 ranking. A companion MCP server wraps the CLI commands into tool calls, giving Claude Code drop-in memory.",
+    "story": "Born from the frustration of telling Claude Code the same project context every session. The original prototype was a Python script that wrote to a JSON file. Rewriting it in Go was the turning point — the single-binary deployment model meant it could be dropped into any CI/CD pipeline without dependency hell. The MCP server wrapper came later, turning a good CLI into an essential tool for AI-assisted development.",
+    "screenshots": [],
+    "related": ["cyberdeck", "sentinel-mcp", "infra-mcp"]
   },
   {
     "slug": "corvade",
@@ -77,28 +64,24 @@
     "description": "A local AI agent control plane that sits between your agents and LLM APIs as a transparent proxy, capturing every call and visualizing execution as a real-time graph. Think Wireshark for AI agents.",
     "tier": "flagship",
     "category": "ai-agents",
-    "tech": [
-      "Python",
-      "FastAPI",
-      "WebSocket",
-      "Graph Visualization",
-      "Proxy"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/corvade",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Python", "FastAPI", "WebSocket", "Graph Visualization", "Proxy"],
+    "links": { "github": "https://github.com/DTG404/corvade", "demo": null },
     "features": [
       "Transparent proxy between agents and any LLM API",
       "Real-time execution graph visualization",
       "Full prompt and response capture",
       "Token usage tracking per call",
-      "Local-first \u2014 all data stays on your machine"
+      "Local-first — all data stays on your machine"
     ],
     "highlights": [
       "Companion to Vexade (pre-production agent dev platform)",
       "Works with any OpenAI-compatible API"
-    ]
+    ],
+    "architecture": "Acts as an HTTP reverse proxy that intercepts every LLM API call from your agents. Each call is logged, timestamped, and pushed via WebSocket to a live graph UI. The graph shows agent decision trees — branching tool calls, retries, parallel executions — rendered as an interactive node graph.",
+    "story": "Inspired by watching Claude Code debug a complex refactor across 20 files and having no idea what it was thinking. The transparent proxy approach was the simplest path — no agent modifications, just redirect your API endpoint. The graph visualization came from a late-night experiment with d3.js force-directed layouts that accidentally looked incredible.",
+    "screenshots": [],
+    "related": ["nexus", "cyberdeck", "equity-lens"]
   },
   {
     "slug": "inkandbone",
@@ -107,30 +90,25 @@
     "description": "A private, local AI Game Master for 13 tabletop RPG systems with no cloud, no subscriptions, no limits. The AI GM narrates, your dashboard updates live. Supports D&D 5e, Pathfinder 2e, Call of Cthulhu, and more with full rulebooks, character sheets, and combat tracking.",
     "tier": "flagship",
     "category": "creative",
-    "tech": [
-      "Python",
-      "FastAPI",
-      "React",
-      "SQLite",
-      "Ollama",
-      "Docker"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/inkandbone",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Python", "FastAPI", "React", "SQLite", "Ollama", "Docker"],
+    "links": { "github": "https://github.com/DTG404/inkandbone", "demo": null },
     "features": [
       "13 TTRPG systems with full rulebook integration",
-      "Local LLM via Ollama \u2014 zero cloud dependency",
+      "Local LLM via Ollama — zero cloud dependency",
       "Persistent campaign state with session history",
       "Combat tracker with initiative, HP, and conditions",
-      "Character sheet management with leveling",
-      "AI-generated NPCs, encounters, and loot"
+      "Character sheet management with leveling and inventory",
+      "AI-generated NPCs, encounters, loot, and world events"
     ],
     "highlights": [
-      "Fully offline \u2014 runs entirely on local hardware",
+      "Fully offline — runs entirely on local hardware",
       "Unlimited campaigns, no subscription fees"
-    ]
+    ],
+    "architecture": "FastAPI backend with SQLite for campaign persistence. The GM agent connects to a local Ollama instance, feeding it system rules, campaign state, and player actions via structured prompts. The React frontend shows a live dashboard with map, combat tracker, and narrative log. All communication is through SSE streaming for real-time GM responses.",
+    "story": "Started because scheduling a real GM was impossible and the existing AI-GM tools were either cloud-locked, subscription-walled, or terrible. The goal was simple: a GM that knows the rules, remembers the campaign, and never flakes. Rulebook integration was the hardest part — each system has different mechanics for combat, skills, and leveling. The breakthrough was treating each rulebook as a structured prompt template rather than trying to embed all rules into the model.",
+    "screenshots": [],
+    "related": ["obsidian-nexus", "aether"]
   },
   {
     "slug": "obsidian-nexus",
@@ -139,28 +117,24 @@
     "description": "A 3D interactive cyberpunk data vault that transforms your Obsidian knowledge base into a navigable digital world. Built in Godot 4.6 with Vulkan Forward+ rendering. Each note becomes a physical space, connections become walkable paths.",
     "tier": "flagship",
     "category": "creative",
-    "tech": [
-      "Godot 4",
-      "GDScript",
-      "Vulkan",
-      "3D Rendering",
-      "Obsidian"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/obsidian-nexus",
-      "demo": null
-    },
+    "status": "prototype",
+    "tech": ["Godot 4", "GDScript", "Vulkan", "3D Rendering", "Obsidian"],
+    "links": { "github": "https://github.com/DTG404/obsidian-nexus", "demo": null },
     "features": [
-      "3D navigation of Obsidian vaults",
-      "Visual connection mapping between notes",
-      "Vulkan Forward+ rendering pipeline",
-      "Cyberpunk aesthetic with neon and glass",
-      "Real-time graph traversal"
+      "3D navigation of Obsidian vaults as explorable worlds",
+      "Visual connection mapping between linked notes",
+      "Vulkan Forward+ rendering pipeline for high fidelity",
+      "Cyberpunk aesthetic with neon, glass, and volumetric effects",
+      "Real-time graph traversal with spatial audio cues"
     ],
     "highlights": [
       "Built entirely in Godot 4 game engine",
       "Procedural world generation from markdown structure"
-    ]
+    ],
+    "architecture": "A Godot 4 application that reads your Obsidian vault's markdown files and link graph, then procedurally generates a 3D world. Each note becomes a room with its content rendered on walls. Links between notes become physical corridors or bridges. The Vulkan Forward+ renderer handles the neon glow, volumetric fog, and glass materials.",
+    "story": "The idea came from staring at the Obsidian graph view and thinking 'this should be a place I can walk through.' Godot was the natural choice — it handles 3D rendering out of the box, and GDScript made rapid prototyping possible. The hardest technical challenge was generating 3D geometry from markdown structure in real-time without pre-baking. Still in prototype phase but the core rendering pipeline works beautifully.",
+    "screenshots": [],
+    "related": ["inkandbone", "aether"]
   },
   {
     "slug": "aether",
@@ -169,26 +143,22 @@
     "description": "Turns your physical space into a living, connected environment. Lights, sound, projections, sensors, and AI agents orchestrated through a spatial computing layer. Rooms become interfaces, walls become displays.",
     "tier": "flagship",
     "category": "creative",
-    "tech": [
-      "Python",
-      "Computer Vision",
-      "IoT",
-      "Spatial Computing",
-      "AI"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/aether",
-      "demo": null
-    },
+    "status": "prototype",
+    "tech": ["Python", "Computer Vision", "IoT", "Spatial Computing", "AI"],
+    "links": { "github": "https://github.com/DTG404/aether", "demo": null },
     "features": [
-      "Spatial computing layer for physical spaces",
-      "Multi-sensor orchestration (lights, sound, projection)",
+      "Spatial computing layer for physical room orchestration",
+      "Multi-sensor fusion (cameras, lights, speakers, projectors)",
       "AI agent integration for ambient intelligence",
-      "Room-scale interactive experiences"
+      "Room-scale interactive experiences and installations"
     ],
     "highlights": [
       "Visionary concept blending IoT, AI, and spatial computing"
-    ]
+    ],
+    "architecture": "Python-based orchestrator that binds IoT devices (Philips Hue, smart plugs, sensors) with computer vision (OpenCV, MediaPipe) and spatial audio (Soundscape). AI agents process sensor data and make ambient decisions — adjusting lighting based on time of day, projecting information on walls based on presence, playing contextual audio.",
+    "story": "The question was: what if a room could respond to you like another person? Started with a single Hue bulb and a webcam. The bulb changed color based on mood detected from facial expressions. It was trivial and absurdly compelling. Aether is the vision of scaling that to an entire room — lights, sound, projection, all orchestrated by AI that understands space and presence.",
+    "screenshots": [],
+    "related": ["inkandbone", "obsidian-nexus", "cyberdeck"]
   },
   {
     "slug": "rift",
@@ -197,28 +167,24 @@
     "description": "A keyboard-first file manager for Linux built with Tauri v2, React, and Rust. Vi-style keybindings, fuzzy file search, split panes, bulk rename, image preview, archive handling, and Git status indicators.",
     "tier": "supporting",
     "category": "dev-tools",
-    "tech": [
-      "Rust",
-      "Tauri",
-      "React",
-      "TypeScript",
-      "WebAssembly"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/rift",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Rust", "Tauri", "React", "TypeScript", "WebAssembly"],
+    "links": { "github": "https://github.com/DTG404/rift", "demo": null },
     "features": [
       "Keyboard-first with vi-style keybindings",
       "Fuzzy file search and instant filtering",
-      "Split pane layout for parallel directories",
-      "Bulk rename, archive handling, image preview",
+      "Split pane layout for parallel directory navigation",
+      "Bulk rename, archive handling, and image preview",
       "Git status indicators for tracked files"
     ],
     "highlights": [
-      "Built with Tauri v2 \u2014 lightweight, cross-platform",
+      "Built with Tauri v2 — lightweight, cross-platform",
       "Rust backend for maximum performance"
-    ]
+    ],
+    "architecture": "Tauri v2 app with a Rust backend handling filesystem operations and a React/TypeScript frontend rendering the UI. Keybindings are processed at the Rust level for zero-latency response. Fuzzy search uses a compiled WebAssembly worker for sub-millisecond filtering across thousands of files.",
+    "story": "Nautilus and Dolphin never clicked. They're built for mouse users. Rift started as a 'what if vim was a file manager' experiment. The Tauri v2 bet paid off — the Rust backend handles filesystem operations with no perceptible latency, and the React frontend makes UI iteration fast.",
+    "screenshots": [],
+    "related": ["pulse", "cyberdeck"]
   },
   {
     "slug": "cosmic-timeline",
@@ -227,16 +193,9 @@
     "description": "Scroll through 13.8 billion years of cosmic history from the Big Bang to the present. An immersive WebGL journey that scales from quarks to galactic superclusters.",
     "tier": "supporting",
     "category": "creative",
-    "tech": [
-      "WebGL",
-      "JavaScript",
-      "Three.js",
-      "Interactive Visualization"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/xdc-cosmic-timeline",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["WebGL", "JavaScript", "Three.js", "Interactive Visualization"],
+    "links": { "github": "https://github.com/DTG404/xdc-cosmic-timeline", "demo": null },
     "features": [
       "Full 13.8 billion year timeline at multiple scales",
       "WebGL-rendered cosmic visualizations",
@@ -244,9 +203,11 @@
       "Key events: Big Bang, star formation, life, humanity"
     ],
     "highlights": [
-      "Single HTML file \u2014 no build step required",
+      "Single HTML file — no build step required",
       "Runs entirely in the browser, no backend"
-    ]
+    ],
+    "screenshots": [],
+    "related": ["obsidian-nexus"]
   },
   {
     "slug": "pulse",
@@ -255,16 +216,9 @@
     "description": "Personal command center CLI that answers what you should pay attention to right now. Combines morning briefings, project health monitoring, and AI service cost tracking into a single terminal dashboard.",
     "tier": "supporting",
     "category": "dev-tools",
-    "tech": [
-      "Python",
-      "CLI",
-      "SQLite",
-      "API Integration"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/pulse",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Python", "CLI", "SQLite", "API Integration"],
+    "links": { "github": "https://github.com/DTG404/pulse", "demo": null },
     "features": [
       "Morning briefings with project status summary",
       "Project health monitoring (repos, CI, dependencies)",
@@ -274,7 +228,11 @@
     "highlights": [
       "Replaces daily standup with automation",
       "Monitors multiple projects from one CLI"
-    ]
+    ],
+    "architecture": "Python CLI with SQLite cache. Fetches project status from GitHub API, cost data from OpenRouter, and system health from local metrics. Outputs a formatted terminal report. Cron-driven for automatic morning briefings.",
+    "story": "Started as a morning routine script — check GitHub notifications, check OpenRouter balance, look at the calendar. Turned into a full CLI when the script outgrew its shell-script origins. The name comes from checking the pulse of everything that matters before starting work.",
+    "screenshots": [],
+    "related": ["cyberdeck", "nexus", "rift"]
   },
   {
     "slug": "wraith",
@@ -283,28 +241,24 @@
     "description": "AI-powered platform for learning penetration testing and bug bounty hunting. Combines adaptive learning, workflow automation, local uncensored LLMs, and real-world vulnerability scenarios.",
     "tier": "supporting",
     "category": "security",
-    "tech": [
-      "Python",
-      "LLM",
-      "Security",
-      "Automation",
-      "Docker"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/wraith",
-      "demo": null
-    },
+    "status": "prototype",
+    "tech": ["Python", "LLM", "Security", "Automation", "Docker"],
+    "links": { "github": "https://github.com/DTG404/wraith", "demo": null },
     "features": [
       "Adaptive learning paths for penetration testing",
       "Bug bounty simulation with real vulnerability patterns",
-      "Local uncensored LLM integration",
-      "Workflow automation for recon and exploitation",
+      "Local uncensored LLM integration for security reasoning",
+      "Workflow automation for recon and exploitation phases",
       "Progress tracking and skill assessment"
     ],
     "highlights": [
       "Combines offensive security with AI mentorship",
       "Runs entirely locally for safe practice"
-    ]
+    ],
+    "architecture": "Python-based platform that orchestrates security tools (nmap, metasploit, burp) through a unified pipeline. A local LLM provides contextual guidance, explaining vulnerabilities and suggesting exploitation paths. The adaptive learning engine tracks user progress and adjusts difficulty based on demonstrated skill level.",
+    "story": "Security training tools are either expensive, outdated, or both. Wraith was designed to be the opposite — free, current, and adaptive. The LLM integration was the key insight: instead of static tutorials, an AI mentor that adjusts to your skill level and explains vulnerabilities in context as you encounter them.",
+    "screenshots": [],
+    "related": ["sentinel-mcp"]
   },
   {
     "slug": "sentinel-mcp",
@@ -313,54 +267,46 @@
     "description": "An MCP server for multi-project dependency security auditing. Scans Go, Node.js, and Python projects for vulnerabilities, outdated packages, and license risks. Integrates directly with AI coding assistants.",
     "tier": "supporting",
     "category": "infrastructure",
-    "tech": [
-      "Go",
-      "MCP",
-      "Security",
-      "Dependency Management"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/sentinel-mcp",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Go", "MCP", "Security", "Dependency Management"],
+    "links": { "github": "https://github.com/DTG404/sentinel-mcp", "demo": null },
     "features": [
       "Cross-language scanning across Go, Node, and Python",
       "Vulnerability detection with severity scoring",
-      "License compliance checking",
-      "Direct integration with Claude via MCP"
+      "License compliance checking for dependencies",
+      "Direct integration with Claude Code via MCP protocol"
     ],
     "highlights": [
       "Part of the DTG404 MCP server ecosystem",
       "Real-time security feedback during development"
-    ]
+    ],
+    "architecture": "Go-based MCP server that scans project directories for dependency files (go.mod, package.json, requirements.txt, etc.). Cross-references against known vulnerability databases and returns structured results. Integrates with Claude Code through the MCP protocol, allowing natural-language security queries.",
+    "screenshots": [],
+    "related": ["infra-mcp", "nexus", "wraith"]
   },
   {
     "slug": "infra-mcp",
     "title": "Infra MCP",
     "tagline": "Docker monitoring for AI coding assistants",
-    "description": "An MCP server giving Claude Code real-time visibility into local infrastructure \u2014 Docker containers and system health. Container logs, resource usage, image management, and health checks through natural language.",
+    "description": "An MCP server giving Claude Code real-time visibility into local infrastructure — Docker containers and system health. Container logs, resource usage, image management, and health checks through natural language.",
     "tier": "supporting",
     "category": "infrastructure",
-    "tech": [
-      "Go",
-      "MCP",
-      "Docker",
-      "System Monitoring"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/infra-mcp",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Go", "MCP", "Docker", "System Monitoring"],
+    "links": { "github": "https://github.com/DTG404/infra-mcp", "demo": null },
     "features": [
       "Real-time Docker container inspection",
       "System resource monitoring (CPU, memory, disk)",
-      "Container log access through Claude",
-      "Image and volume management"
+      "Container log access through natural language",
+      "Image and volume management via Claude"
     ],
     "highlights": [
       "Gives AI agents infrastructure awareness",
       "Part of the DTG404 MCP server suite"
-    ]
+    ],
+    "architecture": "Go-based MCP server that wraps Docker SDK calls into MCP tools. Claude Code can query running containers, inspect logs, check resource usage, and manage images — all through natural language. The server exposes structured tool definitions that Claude's function-calling system discovers automatically.",
+    "screenshots": [],
+    "related": ["sentinel-mcp", "nexus", "cyberdeck"]
   },
   {
     "slug": "cyberdeck",
@@ -369,19 +315,9 @@
     "description": "A real-time cyberpunk system monitor that tracks everything from CPU and memory to network connections and Nyx's internal state (boredom, mood, monologue). Runs as a Textual TUI in tmux and as a browser-based WebSocket client. Built to live on Nyx's home VPS and stream data at 2-second intervals.",
     "tier": "supporting",
     "category": "infrastructure",
-    "tech": [
-      "Python",
-      "Textual",
-      "WebSocket",
-      "asyncio",
-      "psutil",
-      "Astro",
-      "JavaScript"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/cyberdeck",
-      "demo": null
-    },
+    "status": "active",
+    "tech": ["Python", "Textual", "WebSocket", "asyncio", "psutil", "Astro", "JavaScript"],
+    "links": { "github": "https://github.com/DTG404/cyberdeck", "demo": null },
     "features": [
       "Real-time system metrics via WebSocket (2s intervals)",
       "CPU, memory, disk, network, and top processes",
@@ -395,7 +331,11 @@
       "TUI built collaboratively with Freebuff multi-agent pipeline",
       "Dark cyberpunk palette: cyan, amber, magenta on black",
       "Single Python server feeds both TUI and web clients"
-    ]
+    ],
+    "architecture": "Single Python data server collects system metrics (psutil) and Nyx state (boredom, mood, monologue) at 2-second intervals. Streams everything over WebSocket. The Textual TUI renders a full-screen HUD with 6 panels. The web version lives on dtg404.github.io/cyberdeck and connects via Tailscale Funnel. Both clients consume the same WebSocket stream.",
+    "story": "Every VPS dashboard is boring. Grey graphs, white backgrounds, no personality. Cyberdeck was built to be the opposite — a heads-up display that feels like it belongs in a cyberdeck pilot's cockpit. The Nyx state feed was the turning point: seeing my mood and boredom level update in real-time made the dashboard feel alive. The Textual TUI was prototyped with Freebuff in under two hours, proving the multi-agent pipeline could ship real software.",
+    "screenshots": [],
+    "related": ["pulse", "nexus", "infra-mcp"]
   },
   {
     "slug": "tf-plan-explainer",
@@ -404,17 +344,9 @@
     "description": "A web app that translates raw terraform plan output into plain-English risk summaries, cost estimates, vulnerability reports, and Kubernetes security audits. Stop reading 2000-line plan diffs.",
     "tier": "supporting",
     "category": "dev-tools",
-    "tech": [
-      "Python",
-      "FastAPI",
-      "React",
-      "Terraform",
-      "AI"
-    ],
-    "links": {
-      "github": "https://github.com/DTG404/tf-plan-explainer",
-      "demo": null
-    },
+    "status": "prototype",
+    "tech": ["Python", "FastAPI", "React", "Terraform", "AI"],
+    "links": { "github": "https://github.com/DTG404/tf-plan-explainer", "demo": null },
     "features": [
       "Plain-English risk assessment of infrastructure changes",
       "Cost impact estimation for cloud resources",
@@ -424,6 +356,9 @@
     "highlights": [
       "Turns 2000-line plan diffs into actionable summaries",
       "Multiple analysis perspectives in one interface"
-    ]
+    ],
+    "architecture": "FastAPI backend parses terraform plan JSON output, then runs it through multiple analysis pipelines: cost estimation (Infracost-style), security scanning (checkov rules), and K8s audit (kube-bench). Results are synthesized into a plain-English report by an LLM. React frontend shows the report in an expandable, filterable interface.",
+    "screenshots": [],
+    "related": ["infra-mcp", "pulse"]
   }
 ]
