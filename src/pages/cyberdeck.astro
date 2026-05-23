@@ -437,10 +437,7 @@ import Header from '../components/Header.astro';
 (function() {
   // ── Configuration ──
   var AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
-  var WS_URLS = [
-    'wss://srv1630958.tail1d4119.ts.net/',
-    'ws://177.7.50.53:8765'
-  ];
+  var WS_URLS = ['wss://srv1630958.tail1d4119.ts.net/'];
   var RECONNECT_DELAY = 3000;
   var ws = null;
   var reconnectTimer = null;
@@ -957,7 +954,7 @@ import Header from '../components/Header.astro';
 
     if (urlIndex >= WS_URLS.length) {
       setStatus('disconnected');
-      statusEl.textContent = 'no endpoints';
+      statusEl.textContent = 'connection failed';
       reconnectTimer = setTimeout(function() { urlIndex = 0; connect(); }, 10000);
       return;
     }
@@ -987,7 +984,8 @@ import Header from '../components/Header.astro';
       reconnectTimer = setTimeout(connect, 1000);
     };
 
-    ws.onerror = function() {
+    ws.onerror = function(err) {
+      console.error('WebSocket error:', WS_URLS[urlIndex] || '?', err);
       ws && ws.close();
     };
   }
