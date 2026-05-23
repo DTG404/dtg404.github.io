@@ -87,6 +87,11 @@ import Header from '../components/Header.astro';
             <span class="state-value" id="boredom-status">--</span>
           </div>
           <div class="state-row">
+            <span class="state-label">energy</span>
+            <div class="state-meter"><div class="meter-fill mood-fill" id="energy-bar" style="width: 0%"></div></div>
+            <span class="state-value" id="energy-val">--/--</span>
+          </div>
+          <div class="state-row">
             <span class="state-label">agents</span>
             <span class="state-value" id="agents-val">0</span>
           </div>
@@ -98,7 +103,7 @@ import Header from '../components/Header.astro';
       </div>
     </div>
 
-    <!-- ROW 3: Goals + Finds -->
+    <!-- ROW 3: Goals + Finds + Interest Weights -->
     <div class="data-row animate-in stagger-3">
       <!-- Goals -->
       <div class="data-panel glass" style="flex: 1;">
@@ -121,19 +126,37 @@ import Header from '../components/Header.astro';
           <div class="finds-empty">nothing yet</div>
         </div>
       </div>
+
+      <!-- Interest Weights -->
+      <div class="data-panel glass" style="flex: 0.8;">
+        <div class="panel-header">
+          <span class="section-tag">05</span>
+          <h2 class="section-title">// curious about</h2>
+        </div>
+        <div class="panel-body" id="interests-list">
+          <div class="goals-empty">no data</div>
+        </div>
+      </div>
     </div>
 
-    <!-- ROW 4: Mood History -->
+    <!-- ROW 5: Mood History -->
     <div class="data-row animate-in stagger-3">
       <div class="data-panel glass" style="flex: 1;">
         <div class="panel-header">
-          <span class="section-tag">05</span>
+          <span class="section-tag">06</span>
           <h2 class="section-title">// mood arc</h2>
         </div>
         <div class="panel-body" id="mood-chart-container">
           <div class="sparkline" id="mood-sparkline"></div>
           <div class="mood-legend" id="mood-legend"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ROW 6: Agent Mesh -->
+    <div class="data-row animate-in stagger-3">
+      <div class="data-panel glass" style="flex: 1; padding: 0; overflow: hidden;">
+        <canvas id="agent-mesh-canvas" width="1052" height="320" style="display: block; width: 100%; height: 320px;"></canvas>
       </div>
     </div>
 
@@ -305,6 +328,30 @@ import Header from '../components/Header.astro';
     height: 24px;
     background: linear-gradient(transparent, var(--bg-card));
     pointer-events: none;
+  }
+
+  /* Interest Weights */
+  .interest-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0; font-family: var(--font-mono); font-size: 11px;
+    min-width: 0;
+  }
+  .interest-name {
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.5px; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .interest-bar-wrap {
+    flex: 1; height: 5px; background: rgba(255,255,255,0.05);
+    border-radius: 3px; overflow: hidden; min-width: 30px;
+  }
+  .interest-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 1.2s ease, background 0.8s;
+  }
+  .interest-pct {
+    width: 32px; text-align: right; color: var(--text-muted);
+    font-size: 10px;
   }
 
   /* Mood Sparkline */
@@ -505,6 +552,14 @@ import Header from '../components/Header.astro';
     document.getElementById('boredom-status').textContent = boredom.status || '--';
     document.getElementById('boredom-status').style.color = bVal >= 60 ? 'var(--mood-color)' : 'var(--text-muted)';
 
+    // Energy
+    var energy = nyx.energy || {};
+    var eCur = energy.current || 70;
+    var eMax = energy.max || 100;
+    var ePct = Math.min((eCur / eMax) * 100, 100);
+    document.getElementById('energy-bar').style.width = ePct + '%';
+    document.getElementById('energy-val').textContent = eCur + '/' + eMax;
+
     // Monologue
     var monologue = nyx.monologue || {};
     document.getElementById('monologue-val').textContent = monologue.text || '--';
@@ -512,7 +567,6 @@ import Header from '../components/Header.astro';
     // Animate monologue in subhead
     if (monologue.text && monologue.text.length > 2) {
       monologueScroll.textContent = '// ' + monologue.text;
-      // Reset animation
       monologueScroll.style.animation = 'none';
       monologueScroll.offsetHeight;
       monologueScroll.style.animation = 'scrollLeft 25s linear infinite';
@@ -524,6 +578,35 @@ import Header from '../components/Header.astro';
     document.getElementById('agents-val').textContent = aCount;
     document.getElementById('agent-count').textContent = aCount + ' agents';
     document.getElementById('agent-count').style.display = aCount > 0 ? 'inline' : 'none';
+  }
+
+  function updateEnergy(energy) {
+    if (!energy) return;
+    var eCur = energy.current || 70;
+    var eMax = energy.max || 100;
+    var ePct = Math.min((eCur / eMax) * 100, 100);
+    document.getElementById('energy-bar').style.width = ePct + '%';
+    document.getElementById('energy-val').textContent = eCur + '/' + eMax;
+  }
+
+  function updateInterestWeights(weights) {
+    var container = document.getElementById('interests-list');
+    if (!weights || weights.length === 0) {
+      container.innerHTML = '<div class="goals-empty">no data</div>';
+      return;
+    }
+    var html = '';
+    var maxW = weights[0] ? weights[0].weight : 100;
+    if (maxW < 1) maxW = 100;
+    weights.slice(0, 8).forEach(function(w) {
+      var pct = Math.min(Math.max((w.weight / maxW) * 100, 0), 100);
+      html += '<div class="interest-row">' +
+        '<span class="interest-name">' + (w.name || '?') + '</span>' +
+        '<div class="interest-bar-wrap"><div class="interest-fill mood-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="interest-pct">' + Math.round(w.weight) + '</span>' +
+        '</div>';
+    });
+    container.innerHTML = html;
   }
 
   function updateGoals(goals) {
@@ -615,9 +698,153 @@ import Header from '../components/Header.astro';
     updateSystem(data);
     var nyx = data.nyx || {};
     updateNyx(nyx);
+    if (nyx.energy) updateEnergy(nyx.energy);
     if (nyx.goals) updateGoals(nyx.goals);
     if (nyx.finds) updateFinds(nyx.finds);
+    if (nyx.interest_weights) updateInterestWeights(nyx.interest_weights);
     if (nyx.mood_history) updateMoodHistory(nyx.mood_history);
+    if (nyx.agents && nyx.agents.mesh) updateAgentMesh(nyx.agents.mesh);
+  }
+
+  // ── Agent Mesh Canvas ──
+  var meshCanvas = null;
+  function updateAgentMesh(mesh) {
+    if (!mesh || !mesh.nodes || mesh.nodes.length === 0) return;
+    if (!meshCanvas) {
+      meshCanvas = document.getElementById('agent-mesh-canvas');
+      if (!meshCanvas) return;
+      // Set canvas size to match display size
+      var rect = meshCanvas.getBoundingClientRect();
+      meshCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      meshCanvas.height = rect.height * (window.devicePixelRatio || 1);
+    }
+    renderAgentMesh(meshCanvas, { agents: { mesh: mesh } });
+  }
+
+  // ── Canvas Agent Mesh Renderer ──
+  // Renders a networked node graph showing Nyx's active subagents
+  function renderAgentMesh(canvas, data) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var cx = W / 2, cy = H / 2;
+    if (!canvas._st) canvas._st = { nodes: [], edges: [], map: {}, starts: {}, t: 0, lf: 0 };
+    var st = canvas._st;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function tcol(type) {
+      switch (type) {
+        case 'core': return '#00f0ff'; case 'service': return '#00ff88';
+        case 'worker': return '#ff00e5'; case 'tracker': return '#ffb347';
+        default: return '#00f0ff';
+      }
+    }
+    function scale(n) { var c = Number(n.cpu) || 0, m = Number(n.mem) || 0; return 1 + c * 0.08 + m * 0.06; }
+    function bsize(t) { return t === 'core' ? 20 : 12; }
+
+    var now = Date.now();
+    var mesh = (data && data.agents && data.agents.mesh) ? data.agents.mesh : null;
+    var nwNodes = mesh ? mesh.nodes : [];
+    var nwEdges = mesh ? mesh.edges : [];
+    var seen = {};
+
+    for (var i = 0; i < nwNodes.length; i++) {
+      var n = nwNodes[i]; seen[n.id] = true;
+      if (!(n.id in st.starts)) st.starts[n.id] = now;
+    }
+    var dead = [];
+    for (var id in st.map) { if (st.map.hasOwnProperty(id) && !(id in seen)) dead.push(id); }
+    for (var d = 0; d < dead.length; d++) { delete st.map[dead[d]]; delete st.starts[dead[d]]; }
+
+    st.nodes = [];
+    for (var i2 = 0; i2 < nwNodes.length; i2++) {
+      var nd = nwNodes[i2], ex = st.map[nd.id], pos;
+      if (ex) { pos = { x: ex.x, y: ex.y }; }
+      else {
+        var ang = (i2 / Math.max(nwNodes.length, 1)) * Math.PI * 2;
+        var dist = nd.type === 'core' ? 0 : 140 + Math.random() * 60;
+        pos = { x: cx + Math.cos(ang) * dist, y: cy + Math.sin(ang) * dist };
+      }
+      var e = { id: nd.id, label: nd.label || '', type: nd.type || 'service',
+        cpu: Number(nd.cpu) || 0, mem: Number(nd.mem) || 0,
+        x: pos.x, y: pos.y, tx: pos.x, ty: pos.y };
+      st.map[nd.id] = e; st.nodes.push(e);
+    }
+    st.edges = [];
+    for (var j = 0; j < nwEdges.length; j++) {
+      var ed = nwEdges[j]; st.edges.push({ src: ed.source, tgt: ed.target, type: ed.type || 'spawn' });
+    }
+
+    // radial target positions
+    var core = null;
+    for (var k = 0; k < st.nodes.length; k++) { if (st.nodes[k].type === 'core') { core = st.nodes[k]; break; } }
+    if (core) { core.tx = cx; core.ty = cy; }
+    var others = [];
+    for (var k2 = 0; k2 < st.nodes.length; k2++) { if (st.nodes[k2].type !== 'core') others.push(st.nodes[k2]); }
+    for (var o = 0; o < others.length; o++) {
+      var ang = (o / Math.max(others.length, 1)) * Math.PI * 2;
+      var orb = 120 + others.length * 5;
+      others[o].tx = cx + Math.cos(ang) * orb; others[o].ty = cy + Math.sin(ang) * orb;
+    }
+
+    // collision nudge
+    for (var a = 0; a < st.nodes.length; a++) {
+      for (var b = a + 1; b < st.nodes.length; b++) {
+        var dx = st.nodes[b].tx - st.nodes[a].tx, dy = st.nodes[b].ty - st.nodes[a].ty;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 30 && dist > 0.01) {
+          var push = (30 - dist) / 2, nx = dx / dist, ny = dy / dist;
+          st.nodes[a].tx -= nx * push; st.nodes[a].ty -= ny * push;
+          st.nodes[b].tx += nx * push; st.nodes[b].ty += ny * push;
+        }
+      }
+    }
+
+    function draw(ts) {
+      if (!st.lf) st.lf = ts;
+      var dt = (ts - st.lf) / 1000; st.lf = ts; st.t += dt;
+      ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, 0, W, H);
+
+      for (var i3 = 0; i3 < st.nodes.length; i3++) {
+        var n = st.nodes[i3]; n.x = lerp(n.x, n.tx, 0.12); n.y = lerp(n.y, n.ty, 0.12);
+      }
+
+      // edges + particles
+      for (var j2 = 0; j2 < st.edges.length; j2++) {
+        var e = st.edges[j2], src = st.map[e.src], tgt = st.map[e.tgt];
+        if (!src || !tgt) continue;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,240,255,0.35)'; ctx.shadowBlur = 6;
+        ctx.strokeStyle = 'rgba(0,240,255,0.25)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(src.x, src.y); ctx.lineTo(tgt.x, tgt.y); ctx.stroke();
+        ctx.restore();
+        var spd = 0.4 + (src.cpu || 0) * 0.3, prog = (st.t * spd) % 1;
+        var px = lerp(src.x, tgt.x, prog), py = lerp(src.y, tgt.y, prog);
+        ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff'; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+      }
+
+      var pulse = 15 + Math.sin(st.t * 2.5) * 5;
+      var showLbl = st.nodes.length <= 15;
+
+      for (var i4 = 0; i4 < st.nodes.length; i4++) {
+        var nd = st.nodes[i4], col = tcol(nd.type), s = scale(nd), r = bsize(nd.type) * s;
+        var gr = nd.type === 'core' ? pulse * s : r * 1.8;
+        var g = ctx.createRadialGradient(nd.x, nd.y, r * 0.3, nd.x, nd.y, gr);
+        g.addColorStop(0, col); g.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(nd.x, nd.y, gr, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+        ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = col; ctx.shadowColor = col;
+        ctx.shadowBlur = nd.type === 'core' ? pulse : 10; ctx.fill(); ctx.shadowBlur = 0;
+
+        if (showLbl && (now - (st.starts[nd.id] || now)) > 2000) {
+          ctx.fillStyle = 'rgba(200,220,255,0.8)'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+          ctx.fillText(nd.label, nd.x, nd.y + r + 10);
+        }
+      }
+      if (st._run) requestAnimationFrame(draw);
+    }
+
+    if (!st._run) { st._run = true; requestAnimationFrame(draw); }
   }
 
   // ── WebSocket ──
