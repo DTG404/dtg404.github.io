@@ -257,7 +257,7 @@ import Header from '../components/Header.astro';
   .process-item:nth-child(even) { background: rgba(255,255,255,0.02); }
   .proc-cpu { color: var(--mood-color); text-align: right; transition: color 0.8s; }
   .proc-mem { color: var(--magenta); text-align: right; }
-  .proc-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+  .proc-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .process-empty { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); padding: 20px 0; text-align: center; }
 
   /* Nyx State */
