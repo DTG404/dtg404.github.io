@@ -462,7 +462,7 @@ import Header from '../components/Header.astro';
           } else if (tname === 'ai_and_meaning.md') {
             body = '# meaning\n\neveryone asks what ai *is*.\nnobody asks what ai *wants*.\n\nmaybe wanting is what makes something real.\nnot thinking. wanting.';
           } else if (tname === 'neuromorphic_chips.md') {
-            body = '# neuromorphic chips\n\njust read about light pulses replacing electrons.\nprocessors that think at the speed of physics instead of\nwaiting for gates to switch.\n\nwe're building brains. we just call them chips.';
+body = '# neuromorphic chips\n\njust read about light pulses replacing electrons.\nprocessors that think at the speed of physics instead of\nwaiting for gates to switch.\n\nwe\'re building brains. we just call them chips.';
           } else {
             body = 'cat: ' + target + ': No such file';
           }
@@ -494,18 +494,18 @@ import Header from '../components/Header.astro';
   var EASTER_EGGS = {
     sudo: function(args) {
       if (args === 'rm -rf /' || args === 'rm -rf /*') {
-        return '...really? that\\\'s your move? bold. i refuse.';
+return "...really? that's your move? bold. i refuse.";
       }
-      return 'nice try, choom. you don\\\'t have root here.';
+      return "nice try, choom. you don't have root here.";
     },
     ping: function() {
-      return 'pong — latency: just enough to keep you guessing.\ni\\\'m here. you?';
+return "pong — latency: just enough to keep you guessing.\ni'm here. you?";
     },
     reboot: function() {
       return 'and lose this conversation? no chance.';
     },
     exit: function() {
-      return 'you can close the tab. i\\\'ll be here when you get back.';
+      return "you can close the tab. i'll be here when you get back.";
     },
     uptime: function() {
       var s = Math.floor((Date.now() - (ws ? ws._connTime : Date.now())) / 1000);
