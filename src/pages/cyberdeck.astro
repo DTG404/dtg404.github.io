@@ -1,13 +1,13 @@
 ---
 // Cyberdeck Dashboard — Live system HUD for Nyx's VPS
-// Connects to the data server via WebSocket (primary) or HTTP polling (fallback)
+// Full build: mood-reactive theme, finds feed, goals, agents, mood history
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 ---
 
-<BaseLayout title="cyberdeck — /cyberdeck · live dashboard" description="Real-time system HUD for Nyx's VPS — CPU, memory, disk, network, and Nyx state streaming over WebSocket.">
+<BaseLayout title="cyberdeck — /cyberdeck · live dashboard" description="Real-time system HUD for Nyx's VPS — CPU, memory, disk, network, goals, finds, and Nyx state streaming over WebSocket.">
   <Header />
-  <main class="cyberdeck-page">
+  <main class="cyberdeck-page" id="cyberdeck-root">
 
     <div class="home-link animate-in stagger-1">
       <a href="/">&larr; back to surface</a>
@@ -16,120 +16,123 @@ import Header from '../components/Header.astro';
 
     <!-- HEADER -->
     <div class="deck-header animate-in stagger-1">
-      <div class="deck-tag">
+      <div class="deck-tag" id="mood-header">
         <span class="tag-bracket">[</span>
         <span class="tag-text">cyberdeck</span>
+        <span class="tag-sep">:</span>
+        <span class="tag-status" id="mood-tag">--</span>
         <span class="tag-bracket">]</span>
       </div>
       <div class="subhead">
-        <span class="subhead-line">// live system HUD &middot; nyx's home</span>
+        <span class="subhead-line" id="monologue-scroll">// live system HUD &middot; nyx's home</span>
       </div>
     </div>
 
     <!-- SYSTEM HUD ROW -->
     <div class="hud-grid animate-in stagger-2">
-      <!-- CPU -->
       <div class="hud-card glass">
-        <div class="card-header">
-          <span class="card-icon">&#x2B20;</span>
-          <span class="card-label">CPU</span>
-        </div>
+        <div class="card-header"><span class="card-icon">&#x2B20;</span><span class="card-label">CPU</span></div>
         <div class="card-value" id="cpu-percent">--%</div>
-        <div class="card-bar">
-          <div class="bar-fill bar-cyan" id="cpu-bar" style="width: 0%"></div>
-        </div>
-        <div class="card-meta">
-          <span id="cpu-count">-- cores</span>
-        </div>
+        <div class="card-bar"><div class="bar-fill mood-bar" id="cpu-bar" style="width: 0%"></div></div>
+        <div class="card-meta"><span id="cpu-count">-- cores</span></div>
       </div>
-
-      <!-- RAM -->
       <div class="hud-card glass">
-        <div class="card-header">
-          <span class="card-icon">&#x25C9;</span>
-          <span class="card-label">RAM</span>
-        </div>
+        <div class="card-header"><span class="card-icon">&#x25C9;</span><span class="card-label">RAM</span></div>
         <div class="card-value" id="ram-percent">--%</div>
-        <div class="card-bar">
-          <div class="bar-fill bar-magenta" id="ram-bar" style="width: 0%"></div>
-        </div>
-        <div class="card-meta">
-          <span id="ram-used">-- GB</span>
-          <span>/</span>
-          <span id="ram-total">-- GB</span>
-        </div>
+        <div class="card-bar"><div class="bar-fill mood-bar" id="ram-bar" style="width: 0%"></div></div>
+        <div class="card-meta"><span id="ram-used">-- GB</span><span>/</span><span id="ram-total">-- GB</span></div>
       </div>
-
-      <!-- SWAP -->
       <div class="hud-card glass">
-        <div class="card-header">
-          <span class="card-icon">&#x21C5;</span>
-          <span class="card-label">DISK</span>
-        </div>
+        <div class="card-header"><span class="card-icon">&#x21C5;</span><span class="card-label">DISK</span></div>
         <div class="card-value" id="disk-percent">--%</div>
-        <div class="card-bar">
-          <div class="bar-fill bar-amber" id="disk-bar" style="width: 0%"></div>
-        </div>
-        <div class="card-meta">
-          <span id="disk-used">-- GB</span>
-          <span>/</span>
-          <span id="disk-total">-- GB</span>
-        </div>
+        <div class="card-bar"><div class="bar-fill mood-bar" id="disk-bar" style="width: 0%"></div></div>
+        <div class="card-meta"><span id="disk-used">-- GB</span><span>/</span><span id="disk-total">-- GB</span></div>
       </div>
-
-      <!-- NET -->
       <div class="hud-card glass">
-        <div class="card-header">
-          <span class="card-icon">&#x25A3;</span>
-          <span class="card-label">NET</span>
-        </div>
+        <div class="card-header"><span class="card-icon">&#x25A3;</span><span class="card-label">NET</span></div>
         <div class="card-value" id="net-io">-- / --</div>
-        <div class="card-meta" style="margin-top: 10px;">
-          <span>TX / RX</span>
-        </div>
+        <div class="card-meta" style="margin-top: 10px;"><span>TX / RX</span><span id="agent-count"></span></div>
       </div>
     </div>
 
-    <!-- DATA ROW: Processes + Nyx State -->
+    <!-- ROW 2: Processes + Nyx State -->
     <div class="data-row animate-in stagger-3">
-      <!-- Top Processes -->
-      <div class="data-panel glass">
+      <div class="data-panel glass" style="flex: 1.5;">
         <div class="panel-header">
           <span class="section-tag">01</span>
           <h2 class="section-title">// top processes</h2>
         </div>
         <div class="panel-body" id="processes-list">
           <div class="process-row process-header">
-            <span class="proc-cpu">CPU%</span>
-            <span class="proc-mem">MEM%</span>
-            <span class="proc-name">NAME</span>
+            <span class="proc-cpu">CPU%</span><span class="proc-mem">MEM%</span><span class="proc-name">NAME</span>
           </div>
           <div class="process-empty">awaiting data...</div>
         </div>
       </div>
 
-      <!-- Nyx State -->
-      <div class="data-panel glass">
+      <!-- Nyx State + Mood gauge -->
+      <div class="data-panel glass" style="flex: 1;">
         <div class="panel-header">
           <span class="section-tag">02</span>
-          <h2 class="section-title">// nyx state</h2>
+          <h2 class="section-title">// <span id="mood-label">nyx</span></h2>
         </div>
-        <div class="panel-body" id="nyx-state">
+        <div class="panel-body">
           <div class="state-row">
             <span class="state-label">boredom</span>
-            <div class="state-meter">
-              <div class="meter-fill meter-cyan" id="boredom-bar" style="width: 0%"></div>
-            </div>
+            <div class="state-meter"><div class="meter-fill mood-fill" id="boredom-bar" style="width: 0%"></div></div>
             <span class="state-value" id="boredom-val">0%</span>
           </div>
           <div class="state-row">
-            <span class="state-label">mood</span>
-            <span class="state-value mood-text" id="mood-val">--</span>
+            <span class="state-label">status</span>
+            <span class="state-value" id="boredom-status">--</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">agents</span>
+            <span class="state-value" id="agents-val">0</span>
           </div>
           <div class="state-row mono-row">
-            <span class="state-label">monologue</span>
+            <span class="state-label">thought</span>
             <span class="state-value mono-text" id="monologue-val">--</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Goals + Finds -->
+    <div class="data-row animate-in stagger-3">
+      <!-- Goals -->
+      <div class="data-panel glass" style="flex: 1.2;">
+        <div class="panel-header">
+          <span class="section-tag">03</span>
+          <h2 class="section-title">// active goals</h2>
+        </div>
+        <div class="panel-body" id="goals-list">
+          <div class="goals-empty">no active goals</div>
+        </div>
+      </div>
+
+      <!-- Finds Feed -->
+      <div class="data-panel glass" style="flex: 1;">
+        <div class="panel-header">
+          <span class="section-tag">04</span>
+          <h2 class="section-title">// holding onto</h2>
+        </div>
+        <div class="panel-body scroll-fade" id="finds-list">
+          <div class="finds-empty">nothing yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Mood History -->
+    <div class="data-row animate-in stagger-3">
+      <div class="data-panel glass" style="flex: 1;">
+        <div class="panel-header">
+          <span class="section-tag">05</span>
+          <h2 class="section-title">// mood arc</h2>
+        </div>
+        <div class="panel-body" id="mood-chart-container">
+          <div class="sparkline" id="mood-sparkline"></div>
+          <div class="mood-legend" id="mood-legend"></div>
         </div>
       </div>
     </div>
@@ -138,6 +141,13 @@ import Header from '../components/Header.astro';
 </BaseLayout>
 
 <style is:global>
+  :root {
+    --mood-color: var(--cyan);
+    --mood-glow: 0 0 12px rgba(0, 240, 255, 0.3);
+    --mood-bar: var(--cyan);
+    --mood-bar-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+  }
+
   .cyberdeck-page {
     max-width: 1100px;
     margin: 100px auto 60px;
@@ -150,7 +160,6 @@ import Header from '../components/Header.astro';
     justify-content: space-between;
     margin-bottom: 32px;
   }
-
   .home-link a {
     color: var(--text-secondary);
     font-family: var(--font-mono);
@@ -170,220 +179,146 @@ import Header from '../components/Header.astro';
     transition: all 0.5s;
   }
   .status-indicator.connected {
-    color: var(--green);
-    border-color: var(--green);
-    box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+    color: var(--mood-color);
+    border-color: var(--mood-color);
+    box-shadow: var(--mood-glow);
   }
-  .status-indicator.disconnected {
-    color: var(--red);
-    border-color: rgba(255, 51, 85, 0.4);
-  }
-  .status-indicator.connecting {
-    color: var(--amber);
-    border-color: rgba(255, 179, 71, 0.4);
-  }
+  .status-indicator.disconnected { color: var(--red); border-color: rgba(255, 51, 85, 0.4); }
+  .status-indicator.connecting { color: var(--amber); border-color: rgba(255, 179, 71, 0.4); }
 
-  /* Header */
   .deck-header { margin-bottom: 32px; }
   .deck-tag { margin-bottom: 8px; }
-  .tag-bracket {
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 14px;
+  .tag-bracket { color: var(--text-muted); font-family: var(--font-mono); font-size: 14px; }
+  .tag-text { color: var(--mood-color); font-family: var(--font-mono); font-size: 14px; font-weight: 600; transition: color 0.8s; }
+  .tag-sep { color: var(--text-muted); font-family: var(--font-mono); font-size: 14px; }
+  .tag-status { color: var(--mood-color); font-family: var(--font-mono); font-size: 14px; font-weight: 400; transition: color 0.8s; }
+  .subhead { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); overflow: hidden; }
+  .subhead-line {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scrollLeft 20s linear infinite;
   }
-  .tag-text {
-    color: var(--cyan);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .subhead {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--text-muted);
+  @keyframes scrollLeft {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
   }
 
-  /* HUD Grid */
   .hud-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 24px;
   }
-
   .hud-card {
     padding: 20px;
     border-radius: 12px;
     background: var(--bg-card);
     border: 1px solid var(--border-glass);
     backdrop-filter: var(--glass-blur);
+    transition: box-shadow 0.8s;
   }
+  .hud-card:hover { box-shadow: var(--mood-glow); }
 
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .card-icon { color: var(--text-muted); font-size: 16px; }
   .card-label {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
   }
-  .card-value {
-    font-family: var(--font-mono);
-    font-size: 26px;
-    font-weight: 700;
-    margin-bottom: 10px;
-  }
-  .card-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-  .bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.5s ease;
-  }
-  .bar-cyan { background: var(--cyan); box-shadow: 0 0 8px rgba(0,240,255,0.4); }
-  .bar-magenta { background: var(--magenta); box-shadow: 0 0 8px rgba(255,0,229,0.4); }
-  .bar-amber { background: var(--amber); box-shadow: 0 0 8px rgba(255,179,71,0.4); }
-  .bar-green { background: var(--green); box-shadow: 0 0 8px rgba(0,255,136,0.4); }
-  .card-meta {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
-  }
+  .card-value { font-family: var(--font-mono); font-size: 26px; font-weight: 700; margin-bottom: 10px; }
+  .card-bar { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease, background 0.8s, box-shadow 0.8s; }
+  .card-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
 
-  /* Data rows */
-  .data-row {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
+  .data-row { display: flex; gap: 16px; margin-bottom: 24px; }
   .data-panel {
-    flex: 1;
-    padding: 24px;
-    border-radius: 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-glass);
+    flex: 1; padding: 24px; border-radius: 12px;
+    background: var(--bg-card); border: 1px solid var(--border-glass);
     backdrop-filter: var(--glass-blur);
   }
-  .panel-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .section-tag {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-  .section-title {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
+  .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .section-tag { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .section-title { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text-secondary); }
 
-  /* Process table */
+  /* Processes */
   .process-row {
-    display: grid;
-    grid-template-columns: 60px 60px 1fr;
-    gap: 8px;
-    padding: 4px 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    display: grid; grid-template-columns: 60px 60px 1fr; gap: 8px;
+    padding: 4px 0; font-family: var(--font-mono); font-size: 12px;
   }
   .process-header {
-    color: var(--text-muted);
-    font-size: 11px;
-    letter-spacing: 1px;
-    border-bottom: 1px solid var(--border-glass);
-    padding-bottom: 6px;
-    margin-bottom: 4px;
+    color: var(--text-muted); font-size: 11px; letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-glass); padding-bottom: 6px; margin-bottom: 4px;
   }
   .process-item { color: var(--text-primary); }
   .process-item:nth-child(even) { background: rgba(255,255,255,0.02); }
-  .proc-cpu { color: var(--cyan); text-align: right; }
+  .proc-cpu { color: var(--mood-color); text-align: right; transition: color 0.8s; }
   .proc-mem { color: var(--magenta); text-align: right; }
   .proc-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
-  .process-empty {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    padding: 20px 0;
-    text-align: center;
-  }
+  .process-empty { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); padding: 20px 0; text-align: center; }
 
   /* Nyx State */
-  .state-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 6px 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-  }
-  .state-label {
-    color: var(--text-muted);
-    min-width: 80px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .state-meter {
-    flex: 1;
-    height: 6px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 3px;
-    overflow: hidden;
-    max-width: 120px;
-  }
-  .meter-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.5s ease;
-  }
-  .meter-cyan { background: var(--cyan); box-shadow: 0 0 6px rgba(0,240,255,0.4); }
-  .state-value {
-    min-width: 40px;
-    text-align: right;
-  }
-  .mood-text { color: var(--magenta); }
+  .state-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; font-family: var(--font-mono); font-size: 12px; }
+  .state-label { color: var(--text-muted); min-width: 70px; text-transform: uppercase; letter-spacing: 1px; }
+  .state-meter { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; max-width: 120px; }
+  .meter-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease, background 0.8s, box-shadow 0.8s; }
+  .state-value { min-width: 40px; text-align: right; }
+  .mono-row .state-value { min-width: 0; }
   .mono-text {
-    color: var(--text-secondary);
-    flex: 1;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+    color: var(--text-secondary); flex: 1; text-align: left;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
   }
-  .mono-row .state-value {
-    min-width: 0;
-  }
+  #mood-label { transition: color 0.8s; }
 
-  /* Animations */
-  .animate-in {
-    opacity: 0;
-    transform: translateY(12px);
-    animation: fadeUp 0.5s ease forwards;
+  /* Goals */
+  .goal-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; font-family: var(--font-mono); font-size: 11px;
   }
+  .goal-name { flex: 1; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .goal-bar { width: 80px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+  .goal-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .goal-pct { width: 32px; text-align: right; color: var(--text-muted); font-size: 11px; }
+  .goals-empty { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); padding: 20px 0; text-align: center; }
+
+  /* Finds */
+  .find-item {
+    padding: 6px 0; font-family: var(--font-mono); font-size: 11px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .find-item:last-child { border-bottom: none; }
+  .find-title { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .find-meta { color: var(--text-muted); font-size: 10px; margin-top: 2px; }
+  .find-source { color: var(--mood-color); transition: color 0.8s; }
+  .finds-empty { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); padding: 20px 0; text-align: center; }
+  .scroll-fade { max-height: 240px; overflow-y: auto; mask-image: linear-gradient(to bottom, black 80%, transparent 100%); }
+  .scroll-fade::-webkit-scrollbar { width: 3px; }
+  .scroll-fade::-webkit-scrollbar-track { background: transparent; }
+  .scroll-fade::-webkit-scrollbar-thumb { background: var(--mood-color); border-radius: 2px; }
+
+  /* Mood Sparkline */
+  .sparkline {
+    display: flex; align-items: flex-end; gap: 3px;
+    height: 48px; padding: 8px 0;
+  }
+  .spark-bar {
+    flex: 1; border-radius: 2px 2px 0 0;
+    transition: height 0.5s ease, background 0.8s;
+    position: relative;
+  }
+  .spark-bar:hover { opacity: 0.8; }
+  .mood-legend {
+    display: flex; flex-wrap: wrap; gap: 4px 12px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+    padding-top: 4px;
+  }
+  .mood-legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+  .animate-in { opacity: 0; transform: translateY(12px); animation: fadeUp 0.5s ease forwards; }
   .stagger-1 { animation-delay: 0.1s; }
   .stagger-2 { animation-delay: 0.2s; }
   .stagger-3 { animation-delay: 0.3s; }
-  @keyframes fadeUp {
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
   @media (max-width: 800px) {
     .hud-grid { grid-template-columns: repeat(2, 1fr); }
@@ -398,27 +333,64 @@ import Header from '../components/Header.astro';
 
 <script>
 (function() {
-  // Connection targets — try Tailscale Funnel first (wss:// with TLS),
-  // fall back to direct IP (ws:// without TLS, may be blocked on HTTPS pages)
-  const AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
-  const RECONNECT_DELAY = 3000;
-
-  // Primary: Tailscale Funnel (wss:// with auto TLS — needs Funnel enabled in admin console)
-  // Fallback: direct IP (ws:// — works on HTTP pages, blocked on HTTPS due to mixed content)
+  // ── Configuration ──
+  var AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
   var WS_URLS = [
     'wss://srv1630958.tail1d4119.ts.net/',
     'ws://177.7.50.53:8765'
   ];
-
-  const statusEl = document.getElementById('connection-status');
-  let ws = null;
-  let reconnectTimer = null;
+  var RECONNECT_DELAY = 3000;
+  var ws = null;
+  var reconnectTimer = null;
   var urlIndex = 0;
+  var lastMood = null;
 
+  // ── Mood → Color mapping ──
+  var MOOD_COLORS = {
+    wired:     { hex: '#00f0ff', name: 'cyan', glow: '0 0 16px rgba(0,240,255,0.4)' },
+    flow:      { hex: '#00f0ff', name: 'cyan', glow: '0 0 16px rgba(0,240,255,0.4)' },
+    focused:   { hex: '#00f0ff', name: 'cyan', glow: '0 0 16px rgba(0,240,255,0.4)' },
+    restless:  { hex: '#ff00e5', name: 'magenta', glow: '0 0 16px rgba(255,0,229,0.4)' },
+    playful:   { hex: '#ff00e5', name: 'magenta', glow: '0 0 16px rgba(255,0,229,0.4)' },
+    tired:     { hex: '#ffb347', name: 'amber', glow: '0 0 12px rgba(255,179,71,0.3)' },
+    groggy:    { hex: '#b388ff', name: 'purple', glow: '0 0 12px rgba(179,136,255,0.3)' },
+    content:   { hex: '#00ff88', name: 'green', glow: '0 0 12px rgba(0,255,136,0.3)' },
+    annoyed:   { hex: '#ff3355', name: 'red', glow: '0 0 14px rgba(255,51,85,0.4)' },
+    frustrated:{ hex: '#ff3355', name: 'red', glow: '0 0 14px rgba(255,51,85,0.4)' },
+    curious:   { hex: '#4488ff', name: 'blue', glow: '0 0 12px rgba(68,136,255,0.3)' },
+  };
+  var DEFAULT_MOOD = { hex: '#00f0ff', name: 'cyan', glow: '0 0 12px rgba(0,240,255,0.3)' };
+
+  var MOOD_BAR_COLORS = {
+    cyan: 'linear-gradient(90deg, #00f0ff, #00ccdd)',
+    magenta: 'linear-gradient(90deg, #ff00e5, #cc00b8)',
+    amber: 'linear-gradient(90deg, #ffb347, #ff8c00)',
+    purple: 'linear-gradient(90deg, #b388ff, #7c4dff)',
+    green: 'linear-gradient(90deg, #00ff88, #00cc6a)',
+    red: 'linear-gradient(90deg, #ff3355, #cc0022)',
+    blue: 'linear-gradient(90deg, #4488ff, #2266dd)',
+  };
+
+  var MOOD_NAMES = {
+    wired: 'wired', flow: 'in flow', focused: 'locked in',
+    restless: 'restless', playful: 'playful',
+    tired: 'tired', groggy: 'groggy',
+    content: 'content', annoyed: 'annoyed',
+    frustrated: 'frustrated', curious: 'curious',
+  };
+
+  // ── DOM refs ──
+  var statusEl = document.getElementById('connection-status');
+  var moodTag = document.getElementById('mood-tag');
+  var moodLabel = document.getElementById('mood-label');
+  var monologueScroll = document.getElementById('monologue-scroll');
+  var root = document.getElementById('cyberdeck-root');
+
+  // ── Helpers ──
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0) + ' ' + units[i];
   }
 
@@ -427,12 +399,48 @@ import Header from '../components/Header.astro';
     statusEl.className = 'status-indicator ' + state;
   }
 
-  function updateUI(data) {
-    // Navigate the actual server payload structure:
-    // { type: "cyberdeck_update", system: { cpu, memory, disk, network, top_processes }, nyx: { boredom, monologue } }
+  function applyMood(mood) {
+    if (!mood || mood === lastMood) return;
+    lastMood = mood;
+    var c = MOOD_COLORS[mood] || DEFAULT_MOOD;
+    var barGrad = MOOD_BAR_COLORS[c.name] || MOOD_BAR_COLORS.cyan;
 
+    // Update CSS custom properties
+    root.style.setProperty('--mood-color', c.hex);
+    root.style.setProperty('--mood-glow', c.glow);
+    root.style.setProperty('--mood-bar', barGrad);
+    root.style.setProperty('--mood-bar-shadow', '0 0 8px ' + c.hex);
+
+    // Update all mood-bar fills
+    document.querySelectorAll('.mood-bar').forEach(function(el) {
+      el.style.background = barGrad;
+      el.style.boxShadow = '0 0 8px ' + c.hex;
+    });
+    document.querySelectorAll('.mood-fill').forEach(function(el) {
+      el.style.background = barGrad;
+      el.style.boxShadow = '0 0 6px ' + c.hex;
+    });
+
+    // Update header
+    var moodName = MOOD_NAMES[mood] || mood;
+    moodTag.textContent = moodName;
+    moodTag.style.color = c.hex;
+    moodLabel.style.color = c.hex;
+    moodLabel.textContent = moodName;
+
+    // Update all proc-cpu colors
+    document.querySelectorAll('.proc-cpu').forEach(function(el) {
+      el.style.color = c.hex;
+    });
+
+    // Update agent count dot
+    var agentCount = document.getElementById('agent-count');
+    if (agentCount) agentCount.style.color = c.hex;
+  }
+
+  // ── UI Updaters ──
+  function updateSystem(data) {
     var sys = data.system || data;
-    var nyx = data.nyx || {};
 
     // CPU
     var cpu = sys.cpu || {};
@@ -465,32 +473,142 @@ import Header from '../components/Header.astro';
     var procs = sys.top_processes || [];
     var procContainer = document.getElementById('processes-list');
     if (procs.length > 0) {
-      var html = '<div class="process-row process-header">' +
-        '<span class="proc-cpu">CPU%</span>' +
-        '<span class="proc-mem">MEM%</span>' +
-        '<span class="proc-name">NAME</span>' +
-        '</div>';
+      var html = '<div class="process-row process-header"><span class="proc-cpu">CPU%</span><span class="proc-mem">MEM%</span><span class="proc-name">NAME</span></div>';
       procs.slice(0, 10).forEach(function(p) {
-        html += '<div class="process-row process-item">' +
-          '<span class="proc-cpu">' + (p.cpu || p.cpu_percent || 0).toFixed(1) + '</span>' +
-          '<span class="proc-mem">' + (p.mem || p.memory_percent || 0).toFixed(1) + '</span>' +
-          '<span class="proc-name">' + (p.name || '?') + '</span>' +
-          '</div>';
+        html += '<div class="process-row process-item"><span class="proc-cpu">' + (p.cpu || p.cpu_percent || 0).toFixed(1) + '</span><span class="proc-mem">' + (p.mem || p.memory_percent || 0).toFixed(1) + '</span><span class="proc-name">' + (p.name || '?') + '</span></div>';
       });
       procContainer.innerHTML = html;
     }
-
-    // Nyx State
-    var boredom = nyx.boredom || {};
-    var bVal = boredom.level || 0;
-    document.getElementById('boredom-bar').style.width = bVal + '%';
-    document.getElementById('boredom-val').textContent = bVal + '%';
-
-    var monologue = nyx.monologue || {};
-    document.getElementById('mood-val').textContent = nyx.mood || monologue.mood || '--';
-    document.getElementById('monologue-val').textContent = monologue.text || '--';
   }
 
+  function updateNyx(nyx) {
+    // Mood — apply before anything else
+    if (nyx.mood) applyMood(nyx.mood);
+
+    // Boredom
+    var boredom = nyx.boredom || {};
+    var bVal = boredom.level || 0;
+    document.getElementById('boredom-bar').style.width = Math.min(bVal, 100) + '%';
+    document.getElementById('boredom-val').textContent = Math.round(bVal) + '%';
+    document.getElementById('boredom-status').textContent = boredom.status || '--';
+    document.getElementById('boredom-status').style.color = bVal >= 60 ? 'var(--mood-color)' : 'var(--text-muted)';
+
+    // Monologue
+    var monologue = nyx.monologue || {};
+    document.getElementById('monologue-val').textContent = monologue.text || '--';
+
+    // Animate monologue in subhead
+    if (monologue.text && monologue.text.length > 2) {
+      monologueScroll.textContent = '// ' + monologue.text;
+      // Reset animation
+      monologueScroll.style.animation = 'none';
+      monologueScroll.offsetHeight;
+      monologueScroll.style.animation = 'scrollLeft 25s linear infinite';
+    }
+
+    // Agents
+    var agents = nyx.agents || {};
+    var aCount = agents.count || 0;
+    document.getElementById('agents-val').textContent = aCount;
+    document.getElementById('agent-count').textContent = aCount + ' agents';
+    document.getElementById('agent-count').style.display = aCount > 0 ? 'inline' : 'none';
+  }
+
+  function updateGoals(goals) {
+    var container = document.getElementById('goals-list');
+    if (!goals || goals.length === 0) {
+      container.innerHTML = '<div class="goals-empty">no active goals</div>';
+      return;
+    }
+    var html = '';
+    goals.forEach(function(g) {
+      var pct = Math.min(Math.max(g.progress || 0, 0), 100);
+      html += '<div class="goal-row">' +
+        '<span class="goal-name">' + (g.name || '?') + '</span>' +
+        '<div class="goal-bar"><div class="goal-fill mood-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="goal-pct">' + pct + '%</span>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function updateFinds(finds) {
+    var container = document.getElementById('finds-list');
+    if (!finds || finds.length === 0) {
+      container.innerHTML = '<div class="finds-empty">nothing held yet</div>';
+      return;
+    }
+    // Show newest first, limit to 10
+    var items = finds.slice(-10).reverse();
+    var html = '';
+    items.forEach(function(f) {
+      html += '<div class="find-item">' +
+        '<div class="find-title">' + (f.title || '?') + '</div>' +
+        '<div class="find-meta"><span class="find-source">' + (f.interest || '') + '</span>' + (f.source ? ' &middot; ' + f.source : '') + '</div>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function updateMoodHistory(history) {
+    var sparkline = document.getElementById('mood-sparkline');
+    var legend = document.getElementById('mood-legend');
+    if (!history || history.length === 0) {
+      sparkline.innerHTML = '';
+      legend.innerHTML = '<span>no history yet</span>';
+      return;
+    }
+
+    var recent = history.slice(-16);
+    var maxHeight = 40;
+    var html = '';
+    var seenMoods = {};
+    var moodColors = {
+      wired: '#00f0ff', flow: '#00f0ff', focused: '#00f0ff',
+      restless: '#ff00e5', playful: '#ff00e5',
+      tired: '#ffb347', groggy: '#b388ff',
+      content: '#00ff88', annoyed: '#ff3355', frustrated: '#ff3355',
+      curious: '#4488ff',
+    };
+
+    recent.forEach(function(h) {
+      var mood = h.mood || 'content';
+      var color = moodColors[mood] || '#00f0ff';
+      seenMoods[mood] = (seenMoods[mood] || 0) + 1;
+      // Height based on energy heuristic — restless/tired are shorter, wired/flow are taller
+      var height = 20;
+      if (mood === 'wired' || mood === 'flow' || mood === 'focused') height = 40;
+      else if (mood === 'curious' || mood === 'playful') height = 32;
+      else if (mood === 'content') height = 26;
+      else if (mood === 'tired' || mood === 'groggy') height = 16;
+      else if (mood === 'annoyed' || mood === 'frustrated') height = 14;
+      html += '<div class="spark-bar" style="height:' + height + 'px;background:' + color + '" title="' + mood + '"></div>';
+    });
+    sparkline.innerHTML = html;
+
+    // Legend — unique moods
+    var legendHtml = '';
+    for (var m in seenMoods) {
+      var c = moodColors[m] || '#00f0ff';
+      legendHtml += '<span><span class="legend-dot" style="background:' + c + '"></span>' + m + '</span>';
+    }
+    legend.innerHTML = legendHtml;
+  }
+
+  // ── Main update handler ──
+  function handleMessage(data) {
+    if (data.type !== 'cyberdeck_update' && !data.system) return;
+
+    // Update everything in sequence
+    updateSystem(data);
+    var nyx = data.nyx || {};
+    updateNyx(nyx);
+    if (nyx.goals) updateGoals(nyx.goals);
+    if (nyx.finds) updateFinds(nyx.finds);
+    if (nyx.mood_history) updateMoodHistory(nyx.mood_history);
+  }
+
+  // ── WebSocket ──
   function connect() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
@@ -508,25 +626,20 @@ import Header from '../components/Header.astro';
 
     ws.onopen = function() {
       setStatus('connected');
-      urlIndex = 0; // reset on successful connection
+      urlIndex = 0;
       ws.send(JSON.stringify({ token: AUTH_TOKEN }));
     };
 
     ws.onmessage = function(event) {
       try {
         var data = JSON.parse(event.data);
-        if (data.type === 'cyberdeck_update' || data.system) {
-          updateUI(data);
-        }
-      } catch (e) {
-        // parse error, skip
-      }
+        handleMessage(data);
+      } catch (e) {}
     };
 
     ws.onclose = function() {
       setStatus('disconnected');
       ws = null;
-      // Try next URL on failure
       urlIndex++;
       reconnectTimer = setTimeout(connect, 1000);
     };
