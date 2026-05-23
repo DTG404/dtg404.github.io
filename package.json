@@ -2,7 +2,7 @@
   "name": "dtg404.github.io",
   "type": "module",
   "version": "1.0.0",
-  "description": "Xavier Coleman — building infrastructure for AI and automation",
+  "description": "dtg404 — building infrastructure for AI and automation",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

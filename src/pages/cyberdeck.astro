@@ -156,7 +156,21 @@ import Header from '../components/Header.astro';
     <!-- ROW 6: Agent Mesh -->
     <div class="data-row animate-in stagger-3">
       <div class="data-panel glass" style="flex: 1; padding: 0; overflow: hidden;">
-        <canvas id="agent-mesh-canvas" width="1052" height="320" style="display: block; width: 100%; height: 320px;"></canvas>
+        <div class="panel-header" style="padding: 24px 24px 0;">
+          <span class="section-tag">07</span>
+          <h2 class="section-title">// agent mesh</h2>
+          <span class="mesh-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#00f0ff"></span>core</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#00ff88"></span>service</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ff00e5"></span>worker</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ffb347"></span>tracker</span>
+          </span>
+        </div>
+        <div style="position:relative;">
+          <canvas id="agent-mesh-canvas" width="1052" height="280" style="display: block; width: 100%; height: 280px;"></canvas>
+          <div id="mesh-tooltip" class="mesh-tooltip" style="display:none;"></div>
+          <div id="mesh-hint" class="mesh-hint">hover a node for details</div>
+        </div>
       </div>
     </div>
 
@@ -372,6 +386,35 @@ import Header from '../components/Header.astro';
   }
   .mood-legend span { display: inline-flex; align-items: center; gap: 4px; }
   .legend-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+  /* Mesh legend + tooltip */
+  .mesh-legend {
+    display: flex; gap: 12px; margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 4px; }
+  .mesh-tooltip {
+    position: absolute; pointer-events: none; z-index: 10;
+    background: rgba(10,10,20,0.9); border: 1px solid var(--border-glass);
+    border-radius: 8px; padding: 8px 12px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-primary); white-space: nowrap;
+    backdrop-filter: blur(8px);
+    transform: translate(-50%, -100%);
+    margin-top: -12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .mesh-tooltip .tt-type { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .mesh-tooltip .tt-name { color: var(--text-primary); font-weight: 600; margin: 2px 0; }
+  .mesh-tooltip .tt-meta { color: var(--text-muted); font-size: 10px; display: flex; gap: 12px; }
+  .mesh-tooltip .tt-meta span { display: inline-flex; align-items: center; gap: 3px; }
+  .mesh-hint {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.2);
+    pointer-events: none; transition: opacity 0.8s;
+  }
 
   .animate-in { opacity: 0; transform: translateY(12px); animation: fadeUp 0.5s ease forwards; }
   .stagger-1 { animation-delay: 0.1s; }
@@ -723,12 +766,18 @@ import Header from '../components/Header.astro';
 
   // ── Canvas Agent Mesh Renderer ──
   // Renders a networked node graph showing Nyx's active subagents
+  // Interactive: hover nodes for details tooltip
+  var meshTooltip = null;
+  var meshHint = null;
   function renderAgentMesh(canvas, data) {
     var ctx = canvas.getContext('2d');
     var W = canvas.width, H = canvas.height;
     var cx = W / 2, cy = H / 2;
     if (!canvas._st) canvas._st = { nodes: [], edges: [], map: {}, starts: {}, t: 0, lf: 0 };
     var st = canvas._st;
+
+    if (!meshTooltip) meshTooltip = document.getElementById('mesh-tooltip');
+    if (!meshHint) meshHint = document.getElementById('mesh-hint');
 
     function lerp(a, b, t) { return a + (b - a) * t; }
     function tcol(type) {
@@ -739,7 +788,7 @@ import Header from '../components/Header.astro';
       }
     }
     function scale(n) { var c = Number(n.cpu) || 0, m = Number(n.mem) || 0; return 1 + c * 0.08 + m * 0.06; }
-    function bsize(t) { return t === 'core' ? 20 : 12; }
+    function bsize(t) { return t === 'core' ? 18 : 10; }
 
     var now = Date.now();
     var mesh = (data && data.agents && data.agents.mesh) ? data.agents.mesh : null;
@@ -761,10 +810,10 @@ import Header from '../components/Header.astro';
       if (ex) { pos = { x: ex.x, y: ex.y }; }
       else {
         var ang = (i2 / Math.max(nwNodes.length, 1)) * Math.PI * 2;
-        var dist = nd.type === 'core' ? 0 : 140 + Math.random() * 60;
+        var dist = nd.type === 'core' ? 0 : 130 + Math.random() * 50;
         pos = { x: cx + Math.cos(ang) * dist, y: cy + Math.sin(ang) * dist };
       }
-      var e = { id: nd.id, label: nd.label || '', type: nd.type || 'service',
+      var e = { id: nd.id, label: nd.label || nd.name || nd.id, type: nd.type || 'service',
         cpu: Number(nd.cpu) || 0, mem: Number(nd.mem) || 0,
         x: pos.x, y: pos.y, tx: pos.x, ty: pos.y };
       st.map[nd.id] = e; st.nodes.push(e);
@@ -782,7 +831,7 @@ import Header from '../components/Header.astro';
     for (var k2 = 0; k2 < st.nodes.length; k2++) { if (st.nodes[k2].type !== 'core') others.push(st.nodes[k2]); }
     for (var o = 0; o < others.length; o++) {
       var ang = (o / Math.max(others.length, 1)) * Math.PI * 2;
-      var orb = 120 + others.length * 5;
+      var orb = 110 + others.length * 5;
       others[o].tx = cx + Math.cos(ang) * orb; others[o].ty = cy + Math.sin(ang) * orb;
     }
 
@@ -798,6 +847,60 @@ import Header from '../components/Header.astro';
         }
       }
     }
+
+    // ── Mouse tracking ──
+    // store devicePixelRatio scaling for accurate hit-testing
+    var dpr = window.devicePixelRatio || 1;
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+
+    // Remove old listener and attach new one using closure over st
+    if (canvas._mouseHandler) {
+      canvas.removeEventListener('mousemove', canvas._mouseHandler);
+      canvas.removeEventListener('mouseleave', canvas._mouseLeaveHandler);
+    }
+
+    canvas._mouseHandler = function(e) {
+      if (!st.nodes.length) { meshTooltip.style.display = 'none'; return; }
+      var mx = (e.clientX - rect.left) * scaleX;
+      var my = (e.clientY - rect.top) * scaleY;
+      var hovered = null;
+      for (var i4 = 0; i4 < st.nodes.length; i4++) {
+        var n = st.nodes[i4];
+        var col = tcol(n.type);
+        var s = scale(n);
+        var r = bsize(n.type) * s + 6; // hit radius with padding
+        var dx = mx - n.x, dy = my - n.y;
+        if (dx * dx + dy * dy < r * r) { hovered = n; break; }
+      }
+      if (hovered) {
+        var cpuStr = (hovered.cpu || 0).toFixed(1);
+        var memStr = (hovered.mem || 0).toFixed(1);
+        meshTooltip.innerHTML =
+          '<div class="tt-type">' + (hovered.type || '?') + '</div>' +
+          '<div class="tt-name">' + (hovered.label || hovered.id) + '</div>' +
+          '<div class="tt-meta">' +
+          '<span>&#x26A1; ' + cpuStr + '%</span>' +
+          '<span>&#x25C9; ' + memStr + '%</span>' +
+          '</div>';
+        meshTooltip.style.display = 'block';
+        meshTooltip.style.left = (e.clientX - rect.left) + 'px';
+        meshTooltip.style.top = (e.clientY - rect.top) + 'px';
+        canvas.style.cursor = 'pointer';
+        if (meshHint) meshHint.style.opacity = '0';
+      } else {
+        meshTooltip.style.display = 'none';
+        canvas.style.cursor = 'default';
+      }
+    };
+    canvas._mouseLeaveHandler = function() {
+      meshTooltip.style.display = 'none';
+      canvas.style.cursor = 'default';
+      if (meshHint) meshHint.style.opacity = '1';
+    };
+    canvas.addEventListener('mousemove', canvas._mouseHandler);
+    canvas.addEventListener('mouseleave', canvas._mouseLeaveHandler);
 
     function draw(ts) {
       if (!st.lf) st.lf = ts;
@@ -824,11 +927,10 @@ import Header from '../components/Header.astro';
       }
 
       var pulse = 15 + Math.sin(st.t * 2.5) * 5;
-      var showLbl = st.nodes.length <= 15;
 
       for (var i4 = 0; i4 < st.nodes.length; i4++) {
         var nd = st.nodes[i4], col = tcol(nd.type), s = scale(nd), r = bsize(nd.type) * s;
-        var gr = nd.type === 'core' ? pulse * s : r * 1.8;
+        var gr = nd.type === 'core' ? pulse * s : r * 2.2;
         var g = ctx.createRadialGradient(nd.x, nd.y, r * 0.3, nd.x, nd.y, gr);
         g.addColorStop(0, col); g.addColorStop(1, 'transparent');
         ctx.beginPath(); ctx.arc(nd.x, nd.y, gr, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
@@ -836,9 +938,11 @@ import Header from '../components/Header.astro';
         ctx.fillStyle = col; ctx.shadowColor = col;
         ctx.shadowBlur = nd.type === 'core' ? pulse : 10; ctx.fill(); ctx.shadowBlur = 0;
 
-        if (showLbl && (now - (st.starts[nd.id] || now)) > 2000) {
-          ctx.fillStyle = 'rgba(200,220,255,0.8)'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
-          ctx.fillText(nd.label, nd.x, nd.y + r + 10);
+        // Show label immediately (no delay) — only if not too many nodes
+        if (st.nodes.length <= 18) {
+          var labelY = nd.y + r + 12;
+          ctx.fillStyle = 'rgba(200,220,255,0.75)'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+          ctx.fillText(nd.label, nd.x, labelY);
         }
       }
       if (st._run) requestAnimationFrame(draw);
