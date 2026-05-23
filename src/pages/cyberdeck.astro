@@ -1,0 +1,580 @@
+---
+// Cyberdeck Dashboard — Live system HUD for Nyx's VPS
+// WebSocket client connecting to the data server on port 8765
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+---
+
+<BaseLayout title="cyberdeck — /cyberdeck · live dashboard" description="Real-time system HUD for Nyx's VPS — CPU, memory, disk, network, and Nyx state streaming over WebSocket.">
+  <Header />
+  <main class="cyberdeck-page">
+
+    <div class="home-link animate-in stagger-1">
+      <a href="/">&larr; back to surface</a>
+      <span id="connection-status" class="status-indicator">disconnected</span>
+    </div>
+
+    <!-- HEADER -->
+    <div class="deck-header animate-in stagger-1">
+      <div class="deck-tag">
+        <span class="tag-bracket">[</span>
+        <span class="tag-text">cyberdeck</span>
+        <span class="tag-bracket">]</span>
+      </div>
+      <div class="subhead">
+        <span class="subhead-line">// live system HUD &middot; nyx's home</span>
+      </div>
+    </div>
+
+    <!-- SYSTEM HUD ROW -->
+    <div class="hud-grid animate-in stagger-2">
+      <!-- CPU -->
+      <div class="hud-card glass">
+        <div class="card-header">
+          <span class="card-icon">&#x2B20;</span>
+          <span class="card-label">CPU</span>
+        </div>
+        <div class="card-value" id="cpu-percent">--%</div>
+        <div class="card-bar">
+          <div class="bar-fill bar-cyan" id="cpu-bar" style="width: 0%"></div>
+        </div>
+        <div class="card-meta">
+          <span id="cpu-count">-- cores</span>
+          <span id="cpu-freq">-- MHz</span>
+        </div>
+      </div>
+
+      <!-- RAM -->
+      <div class="hud-card glass">
+        <div class="card-header">
+          <span class="card-icon">&#x25C9;</span>
+          <span class="card-label">RAM</span>
+        </div>
+        <div class="card-value" id="ram-percent">--%</div>
+        <div class="card-bar">
+          <div class="bar-fill bar-magenta" id="ram-bar" style="width: 0%"></div>
+        </div>
+        <div class="card-meta">
+          <span id="ram-used">-- GB</span>
+          <span>/</span>
+          <span id="ram-total">-- GB</span>
+        </div>
+      </div>
+
+      <!-- SWAP -->
+      <div class="hud-card glass">
+        <div class="card-header">
+          <span class="card-icon">&#x21C5;</span>
+          <span class="card-label">SWAP</span>
+        </div>
+        <div class="card-value" id="swap-percent">--%</div>
+        <div class="card-bar">
+          <div class="bar-fill bar-amber" id="swap-bar" style="width: 0%"></div>
+        </div>
+        <div class="card-meta">
+          <span id="swap-used">-- GB</span>
+          <span>/</span>
+          <span id="swap-total">-- GB</span>
+        </div>
+      </div>
+
+      <!-- DISK -->
+      <div class="hud-card glass">
+        <div class="card-header">
+          <span class="card-icon">&#x25A3;</span>
+          <span class="card-label">DISK</span>
+        </div>
+        <div class="card-value" id="disk-percent">--%</div>
+        <div class="card-bar">
+          <div class="bar-fill bar-green" id="disk-bar" style="width: 0%"></div>
+        </div>
+        <div class="card-meta">
+          <span id="disk-used">-- GB</span>
+          <span>/</span>
+          <span id="disk-total">-- GB</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA ROW: Processes + Nyx State -->
+    <div class="data-row animate-in stagger-3">
+      <!-- Top Processes -->
+      <div class="data-panel glass">
+        <div class="panel-header">
+          <span class="section-tag">01</span>
+          <h2 class="section-title">// top processes</h2>
+        </div>
+        <div class="panel-body" id="processes-list">
+          <div class="process-row process-header">
+            <span class="proc-cpu">CPU%</span>
+            <span class="proc-mem">MEM%</span>
+            <span class="proc-name">NAME</span>
+          </div>
+          <div class="process-empty">awaiting data...</div>
+        </div>
+      </div>
+
+      <!-- Nyx State -->
+      <div class="data-panel glass">
+        <div class="panel-header">
+          <span class="section-tag">02</span>
+          <h2 class="section-title">// nyx state</h2>
+        </div>
+        <div class="panel-body" id="nyx-state">
+          <div class="state-row">
+            <span class="state-label">boredom</span>
+            <div class="state-meter">
+              <div class="meter-fill meter-cyan" id="boredom-bar" style="width: 0%"></div>
+            </div>
+            <span class="state-value" id="boredom-val">0%</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">mood</span>
+            <span class="state-value mood-text" id="mood-val">--</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">monologue</span>
+            <span class="state-value mono-text" id="monologue-val">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA ROW 2: Network -->
+    <div class="data-row animate-in stagger-3">
+      <div class="data-panel glass" style="flex: 1;">
+        <div class="panel-header">
+          <span class="section-tag">03</span>
+          <h2 class="section-title">// network</h2>
+        </div>
+        <div class="panel-body net-body" id="network-data">
+          <div class="net-row">
+            <span class="net-label">Bytes Sent</span>
+            <span class="net-value" id="net-sent">--</span>
+          </div>
+          <div class="net-row">
+            <span class="net-label">Bytes Received</span>
+            <span class="net-value" id="net-recv">--</span>
+          </div>
+          <div class="net-row">
+            <span class="net-label">Active Connections</span>
+            <span class="net-value" id="net-conns">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</BaseLayout>
+
+<style is:global>
+  .cyberdeck-page {
+    max-width: 1100px;
+    margin: 100px auto 60px;
+    padding: 0 24px;
+  }
+
+  .home-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .home-link a {
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .home-link a:hover { color: var(--cyan); }
+
+  .status-indicator {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.5s;
+  }
+  .status-indicator.connected {
+    color: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+  }
+  .status-indicator.disconnected {
+    color: var(--red);
+    border-color: rgba(255, 51, 85, 0.4);
+  }
+  .status-indicator.connecting {
+    color: var(--amber);
+    border-color: rgba(255, 179, 71, 0.4);
+  }
+
+  /* Header */
+  .deck-header { margin-bottom: 32px; }
+  .deck-tag { margin-bottom: 8px; }
+  .tag-bracket {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+  .tag-text {
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .subhead {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* HUD Grid */
+  .hud-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .hud-card {
+    padding: 20px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    backdrop-filter: var(--glass-blur);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .card-icon { color: var(--text-muted); font-size: 16px; }
+  .card-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .card-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .card-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .bar-cyan { background: var(--cyan); box-shadow: 0 0 8px rgba(0,240,255,0.4); }
+  .bar-magenta { background: var(--magenta); box-shadow: 0 0 8px rgba(255,0,229,0.4); }
+  .bar-amber { background: var(--amber); box-shadow: 0 0 8px rgba(255,179,71,0.4); }
+  .bar-green { background: var(--green); box-shadow: 0 0 8px rgba(0,255,136,0.4); }
+  .card-meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Data rows */
+  .data-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .data-panel {
+    flex: 1;
+    padding: 24px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    backdrop-filter: var(--glass-blur);
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-tag {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  /* Process table */
+  .process-row {
+    display: grid;
+    grid-template-columns: 60px 60px 1fr;
+    gap: 8px;
+    padding: 4px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .process-header {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+  }
+  .process-item { color: var(--text-primary); }
+  .process-item:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .proc-cpu { color: var(--cyan); text-align: right; }
+  .proc-mem { color: var(--magenta); text-align: right; }
+  .proc-name { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+  .process-empty {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  /* Nyx State */
+  .state-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .state-label {
+    color: var(--text-muted);
+    min-width: 80px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .state-meter {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 120px;
+  }
+  .meter-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .meter-cyan { background: var(--cyan); box-shadow: 0 0 6px rgba(0,240,255,0.4); }
+  .state-value {
+    min-width: 40px;
+    text-align: right;
+  }
+  .mood-text { color: var(--magenta); }
+  .mono-text {
+    color: var(--text-secondary);
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* Network */
+  .net-body { display: flex; flex-direction: column; gap: 6px; }
+  .net-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 4px 0;
+  }
+  .net-label { color: var(--text-muted); }
+  .net-value { color: var(--green); }
+
+  /* Animations */
+  .animate-in {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Glass glow */
+  .glow-cyan { box-shadow: 0 0 20px rgba(0,240,255,0.05); }
+
+  @media (max-width: 800px) {
+    .hud-grid { grid-template-columns: repeat(2, 1fr); }
+    .data-row { flex-direction: column; }
+    .cyberdeck-page { margin-top: 80px; }
+  }
+  @media (max-width: 480px) {
+    .hud-grid { grid-template-columns: 1fr; }
+    .card-value { font-size: 22px; }
+  }
+</style>
+
+<script>
+(function() {
+  const WS_URL = 'ws://177.7.50.53:8765';
+  const AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
+  const RECONNECT_DELAY = 3000;
+
+  const statusEl = document.getElementById('connection-status');
+  let ws = null;
+  let reconnectTimer = null;
+
+  function setStatus(state) {
+    statusEl.textContent = state;
+    statusEl.className = 'status-indicator ' + state;
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0) + ' ' + units[i];
+  }
+
+  function updateUI(data) {
+    // CPU
+    const cpuPct = data.cpu?.percent ?? 0;
+    document.getElementById('cpu-percent').textContent = cpuPct.toFixed(1) + '%';
+    document.getElementById('cpu-bar').style.width = Math.min(cpuPct, 100) + '%';
+    document.getElementById('cpu-count').textContent = (data.cpu?.cores ?? '?') + ' cores';
+    document.getElementById('cpu-freq').textContent = (data.cpu?.freq_current ?? 0).toFixed(0) + ' MHz';
+
+    // RAM
+    const mem = data.memory;
+    if (mem) {
+      const ramPct = mem.ram_percent ?? 0;
+      document.getElementById('ram-percent').textContent = ramPct.toFixed(1) + '%';
+      document.getElementById('ram-bar').style.width = ramPct + '%';
+      document.getElementById('ram-used').textContent = (mem.ram_used_gb ?? 0).toFixed(1) + ' GB';
+      document.getElementById('ram-total').textContent = (mem.ram_total_gb ?? 0).toFixed(1) + ' GB';
+    }
+
+    // Swap
+    if (mem) {
+      const swapPct = mem.swap_percent ?? 0;
+      document.getElementById('swap-percent').textContent = swapPct.toFixed(1) + '%';
+      document.getElementById('swap-bar').style.width = swapPct + '%';
+      document.getElementById('swap-used').textContent = (mem.swap_used_gb ?? 0).toFixed(2) + ' GB';
+      document.getElementById('swap-total').textContent = (mem.swap_total_gb ?? 0).toFixed(2) + ' GB';
+    }
+
+    // Disk
+    const disk = data.disk;
+    if (disk) {
+      const diskPct = disk.percent ?? 0;
+      document.getElementById('disk-percent').textContent = diskPct.toFixed(1) + '%';
+      document.getElementById('disk-bar').style.width = diskPct + '%';
+      document.getElementById('disk-used').textContent = (disk.used_gb ?? 0).toFixed(1) + ' GB';
+      document.getElementById('disk-total').textContent = (disk.total_gb ?? 0).toFixed(1) + ' GB';
+    }
+
+    // Processes
+    const procContainer = document.getElementById('processes-list');
+    if (data.processes && data.processes.length > 0) {
+      let html = `<div class="process-row process-header">
+        <span class="proc-cpu">CPU%</span>
+        <span class="proc-mem">MEM%</span>
+        <span class="proc-name">NAME</span>
+      </div>`;
+      data.processes.slice(0, 10).forEach(p => {
+        html += `<div class="process-row process-item">
+          <span class="proc-cpu">${(p.cpu_percent ?? 0).toFixed(1)}</span>
+          <span class="proc-mem">${(p.memory_percent ?? 0).toFixed(1)}</span>
+          <span class="proc-name">${p.name || '?'}</span>
+        </div>`;
+      });
+      procContainer.innerHTML = html;
+    }
+
+    // Nyx State
+    const nyx = data.nyx_state || data.nyx || {};
+    const bVal = nyx.boredom ?? nyx.boredom_level ?? 0;
+    document.getElementById('boredom-bar').style.width = bVal + '%';
+    document.getElementById('boredom-val').textContent = bVal + '%';
+    document.getElementById('mood-val').textContent = nyx.mood || nyx.current_mood || '--';
+    document.getElementById('monologue-val').textContent = nyx.monologue || nyx.monologue_snippet || '--';
+
+    // Network
+    const net = data.network;
+    if (net) {
+      document.getElementById('net-sent').textContent = formatBytes(net.bytes_sent ?? 0);
+      document.getElementById('net-recv').textContent = formatBytes(net.bytes_recv ?? 0);
+      document.getElementById('net-conns').textContent = (net.connections ?? '?').toString();
+    }
+  }
+
+  function connect() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+    setStatus('connecting');
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      setStatus('connected');
+      // Send auth
+      ws.send(JSON.stringify({ type: 'auth', token: AUTH_TOKEN }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'auth_ok') {
+          // Authentication confirmed
+          return;
+        }
+        if (data.type === 'data' || data.cpu) {
+          updateUI(data);
+        }
+      } catch (e) {
+        // Parse error, skip
+      }
+    };
+
+    ws.onclose = () => {
+      setStatus('disconnected');
+      ws = null;
+      reconnectTimer = setTimeout(connect, RECONNECT_DELAY);
+    };
+
+    ws.onerror = () => {
+      ws && ws.close();
+    };
+  }
+
+  // Start connection when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connect);
+  } else {
+    connect();
+  }
+})();
+</script>

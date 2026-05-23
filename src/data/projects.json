@@ -363,6 +363,41 @@
     ]
   },
   {
+    "slug": "cyberdeck",
+    "title": "Cyberdeck Dashboard",
+    "tagline": "Live system HUD for your VPS — TUI + web dashboard",
+    "description": "A real-time cyberpunk system monitor that tracks everything from CPU and memory to network connections and Nyx's internal state (boredom, mood, monologue). Runs as a Textual TUI in tmux and as a browser-based WebSocket client. Built to live on Nyx's home VPS and stream data at 2-second intervals.",
+    "tier": "supporting",
+    "category": "infrastructure",
+    "tech": [
+      "Python",
+      "Textual",
+      "WebSocket",
+      "asyncio",
+      "psutil",
+      "Astro",
+      "JavaScript"
+    ],
+    "links": {
+      "github": "https://github.com/DTG404/cyberdeck",
+      "demo": null
+    },
+    "features": [
+      "Real-time system metrics via WebSocket (2s intervals)",
+      "CPU, memory, disk, network, and top processes",
+      "Nyx state feed — boredom level, mood, monologue snippets",
+      "Full-screen Textual TUI with cyberpunk aesthetic",
+      "Browser-based WebSocket client for remote monitoring",
+      "Auth token security for WebSocket connections",
+      "systemd-managed server with auto-restart"
+    ],
+    "highlights": [
+      "TUI built collaboratively with Freebuff multi-agent pipeline",
+      "Dark cyberpunk palette: cyan, amber, magenta on black",
+      "Single Python server feeds both TUI and web clients"
+    ]
+  },
+  {
     "slug": "tf-plan-explainer",
     "title": "TF Plan Explainer",
     "tagline": "Terraform plans in plain English",
