@@ -10,11 +10,11 @@
       <span class="logo-bracket">/&gt;</span>
     </a>
     <div class="nav-links">
-      <a href="/#projects" class="nav-link">Projects</a>
+      <a href="/#projects" class="nav-link projects-nav">[projects]</a>
       <a href="/cyberdeck" class="nav-link deck-nav">[deck]</a>
       <a href="/nyx" class="nav-link nyx-nav">&lt;nyx/&gt;</a>
-      <a href="https://github.com/digitalghost404" class="nav-link" target="_blank">GitHub</a>
-      <a href="https://www.linkedin.com/in/xcoleman" class="nav-link" target="_blank">LinkedIn</a>
+      <a href="https://github.com/digitalghost404" class="nav-link gh-nav" target="_blank">&lt;gh/&gt;</a>
+      <a href="https://www.linkedin.com/in/xcoleman" class="nav-link in-nav" target="_blank">[in]</a>
     </div>
   </nav>
 </header>
@@ -106,6 +106,42 @@
   .nyx-nav:hover {
     color: var(--magenta) !important;
     text-shadow: 0 0 20px rgba(255, 0, 229, 0.5);
+  }
+
+  .projects-nav {
+    color: var(--amber) !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 12px rgba(255, 179, 71, 0.2);
+    position: relative;
+  }
+  .projects-nav:hover {
+    color: var(--amber) !important;
+    text-shadow: 0 0 20px rgba(255, 179, 71, 0.5);
+  }
+
+  .gh-nav {
+    color: var(--green) !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+    position: relative;
+  }
+  .gh-nav:hover {
+    color: var(--green) !important;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  }
+
+  .in-nav {
+    color: #4488ff !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 12px rgba(68, 136, 255, 0.2);
+    position: relative;
+  }
+  .in-nav:hover {
+    color: #4488ff !important;
+    text-shadow: 0 0 20px rgba(68, 136, 255, 0.5);
   }
 
   @media (max-width: 640px) {
