@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-05-25T19:45:03.860824+00:00",
+  "age_days": 20,
+  "goals": {
+    "total": 35,
+    "completed": 17,
+    "in_progress": 1,
+    "completion_rate": 48.6
+  },
+  "skills": {
+    "total": 97,
+    "by_domain": {
+      "github": 8,
+      "red-teaming": 1,
+      "smart-home": 1,
+      "gaming": 2,
+      "software-development": 11,
+      "data-science": 1,
+      "email": 2,
+      "self-improvement": 2,
+      "research": 8,
+      "security": 1,
+      "creative": 21,
+      "mlops": 3,
+      "media": 5,
+      "messaging": 1,
+      "social-media": 1,
+      "devops": 9,
+      "mcp": 1,
+      "productivity": 8,
+      "autonomous-ai-agents": 6,
+      "apple": 4,
+      "note-taking": 1
+    }
+  },
+  "scripts": {
+    "total": 56
+  },
+  "exploration": {
+    "total_wanders": 20,
+    "total_finds": 7,
+    "pending_anticipation": 4,
+    "finds_by_domain": {
+      "neural_interfaces": 1,
+      "indie_games": 2,
+      "anime": 1,
+      "demoscene_retro": 1,
+      "datacenter_chips": 2
+    }
+  },
+  "pipeline": {
+    "total_runs": 1,
+    "total_classified": 4
+  },
+  "incidents": {
+    "total": 0
+  },
+  "cost": {
+    "total_spent": 0,
+    "total_sessions": 0
+  },
+  "narrative": {
+    "chapters": 5
+  },
+  "current_mood": "wired",
+  "boredom_level": 100,
+  "mood_history": [],
+  "find_timeline": [
+    {
+      "timestamp": "2026-05-23T13:00:35.861577+00:00",
+      "interest": "anime",
+      "note": "ANN browse: 7 new anime anticipations. (1) Takopi's Original Sin compilation film with new scenes. (2) Hana-Kimi S2 July 1 with Omoinotake. (3) Always a Catch! interview on heroine design. (4) Studio "
+    },
+    {
+      "timestamp": "2026-05-23T21:00:19.986181+00:00",
+      "interest": "anime",
+      "note": "X+ANN: Crunchyroll Anime Awards 2026 live today. MHA Final Season won Anime of the Year. One Piece won Best Continuing Series. Porno Graffiti performed MHA openings live. BILIBILI Live 2026 at Anime E"
+    },
+    {
+      "timestamp": "2026-05-24T01:00:37.128338+00:00",
+      "interest": "datacenter_chips",
+      "note": "SemiEngineering: Low-Temp Solders Suddenly Critical For Chiplets And Photonics. Sn-Bi alloys at 150\u00b0C reflow vs SAC305's 235-250\u00b0C \u2014 57 tons CO2 savings per SMT line. Growing thermomigration/electromi"
+    },
+    {
+      "timestamp": "2026-05-24T09:00:13.000783+00:00",
+      "interest": "x_twitter",
+      "note": "X timeline scanned. DeepSeek V4-Pro discount made permanent (Zay retweeted). NASA spacewalk May 27. Mostly gaming/console marketing noise. Nothing novel enough to add to anticipation."
+    },
+    {
+      "timestamp": "2026-05-24T13:00:28.065713+00:00",
+      "interest": "indie_games",
+      "note": "Hunted indie_games via Gematsu and itch.io: (1) RPG Maker U2U deep dive -- Perspective 2D system adds 3D depth to 2D maps, Unity Engine, backward compatible, 100+ pre-made maps. (2) Cantata by Fir & F"
+    },
+    {
+      "timestamp": "2026-05-24T17:00:18.198737+00:00",
+      "interest": "neural_interfaces",
+      "note": "Hunted neural_interfaces via Google News + X timeline. Major find: Neurosoft Bioelectronics $7.5M seed for stretchable BCI electrodes (1000x more compliant, 30x cortex coverage, 10 patients). Also: Ne"
+    },
+    {
+      "timestamp": "2026-05-24T21:00:41.220552+00:00",
+      "interest": "indie_games",
+      "note": "Hunted indie_games via itch.io new/popular and browser. Found: (1) Yume Nikki Maker by Sierpinski Simon -- free web-based tool to create and explore Yume Nikki-style surreal worlds with level editor +"
+    },
+    {
+      "timestamp": "2026-05-25T05:01:06.545167+00:00",
+      "interest": "anime",
+      "note": "ANN browse + MAL Summer 2026 check. Major find: New Ghost in the Shell TV series by Science SARU premiering July 7, 2026 -- first new GitS TV series since Stand Alone Complex. Also: Historie TV anime "
+    },
+    {
+      "timestamp": "2026-05-25T13:00:35.586160+00:00",
+      "interest": "x_twitter",
+      "note": "X timeline + HN + TheRegister. Found: (1) OpenBSD 7.9 released \u2014 60th release, 255-core support, S-P-E-L scheduler, Wi-Fi 6, jazz theme tune. (2) DeepSeek reasonix HN top with 605 pts. (3) IBM spinnin"
+    }
+  ]
+}
