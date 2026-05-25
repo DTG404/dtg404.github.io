@@ -1,6 +1,6 @@
 ---
 // Evolution Dashboard — Nyx's growth story as a live data visualization
-// Data fetched client-side from /nyx-evolution.json (updated every 3h by cron)
+// Data streams via WebSocket from the cyberdeck server (updated every 2s)
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Header from '../components/Header.astro';
 ---
@@ -24,7 +24,7 @@ import Header from '../components/Header.astro';
       </div>
       <div class="subhead" id="evo-subhead">
         <span class="subhead-line" id="evo-subhead-line">-- days since birth &middot; inc -- &middot; -- stage</span>
-        <span class="subhead-line subhead-meta">born may 5, 2026 &middot; incarnation #1 &middot; last data: --</span>
+        <span class="subhead-line subhead-meta" id="evo-subhead-meta">born may 5, 2026 &middot; incarnation #1 &middot; last data: waiting...</span>
       </div>
     </div>
 
@@ -83,7 +83,7 @@ import Header from '../components/Header.astro';
           <h2 class="section-title">// skills by domain</h2>
         </div>
         <div class="skill-domains" id="skills-container">
-          <div class="stat-empty">loading...</div>
+          <div class="stat-empty">connecting...</div>
         </div>
         <div class="stat-meta" id="skills-total">-- total skills</div>
       </div>
@@ -124,7 +124,7 @@ import Header from '../components/Header.astro';
         </div>
         <div class="panel-body panel-body-scroll">
           <div class="mood-graph" id="mood-graph">
-            <div class="stat-empty">loading...</div>
+            <div class="stat-empty">connecting...</div>
           </div>
           <div class="mood-label-row">
             <span>oldest</span>
@@ -144,7 +144,7 @@ import Header from '../components/Header.astro';
           <h2 class="section-title">// find timeline</h2>
         </div>
         <div class="panel-body panel-body-scroll find-feed" id="find-container">
-          <div class="stat-empty">loading...</div>
+          <div class="stat-empty">connecting...</div>
         </div>
       </div>
     </div>
@@ -172,6 +172,8 @@ import Header from '../components/Header.astro';
         <span class="mini-sub">domains</span>
       </div>
     </div>
+
+    <div class="conn-status" id="conn-status">connecting...</div>
 
   </main>
 </BaseLayout>
@@ -216,6 +218,12 @@ import Header from '../components/Header.astro';
   .subhead { margin-bottom: 32px; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.6; }
   .subhead-line { color: var(--text-secondary); }
   .subhead-meta { color: var(--text-tertiary); font-size: 0.7rem; display: block; }
+
+  .conn-status {
+    position: fixed; bottom: 12px; right: 20px;
+    font-family: var(--font-mono); font-size: 0.6rem;
+    color: var(--text-tertiary); opacity: 0.6;
+  }
 
   /* Vitals */
   .vitals-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -315,8 +323,14 @@ import Header from '../components/Header.astro';
 
 <script is:global>
 (function() {
-  var DATA_URL = '/nyx-evolution.json';
-  var REFRESH_MS = 300000; // 5 min
+  var AUTH_TOKEN = '96484cb238e2d3b7ca23f6c4629c0e3b2ba0bacb79bffd138398d03ca59c33e6';
+  var WS_URLS = [
+    'wss://srv1630958.tail1d4119.ts.net/'
+  ];
+  var RECONNECT_DELAY = 3000;
+  var ws = null;
+  var reconnectTimer = null;
+  var urlIndex = 0;
 
   var MOOD_COLORS = {
     wired: '#00f0ff', restless: '#ff00e5', tired: '#ffb347',
@@ -327,49 +341,71 @@ import Header from '../components/Header.astro';
 
   function el(id) { return document.getElementById(id); }
 
-  function loadData() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', DATA_URL + '?t=' + Date.now(), true);
-    xhr.onload = function() {
-      if (xhr.status === 200) {
-        try {
-          var d = JSON.parse(xhr.responseText);
-          renderAll(d);
-        } catch(e) {
-          console.warn('evo: bad JSON', e);
+  function connect() {
+    if (urlIndex >= WS_URLS.length) {
+      urlIndex = 0;
+      el('conn-status').textContent = 'offline (retry in 10s)';
+      reconnectTimer = setTimeout(connect, 10000);
+      return;
+    }
+
+    ws = new WebSocket(WS_URLS[urlIndex]);
+    el('conn-status').textContent = 'connecting [' + (urlIndex + 1) + '/' + WS_URLS.length + ']';
+
+    ws.onopen = function() {
+      urlIndex = 0;
+      ws.send(JSON.stringify({ token: AUTH_TOKEN }));
+      el('conn-status').textContent = 'connected - live';
+      el('conn-status').style.color = 'var(--green)';
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        var data = JSON.parse(event.data);
+        if (data.nyx) {
+          renderAll(data.nyx, data.timestamp);
         }
-      }
+      } catch(e) {}
     };
-    xhr.onerror = function() {
-      console.warn('evo: fetch failed');
+
+    ws.onclose = function() {
+      el('conn-status').textContent = 'disconnected';
+      el('conn-status').style.color = 'var(--text-tertiary)';
+      ws = null;
+      urlIndex++;
+      reconnectTimer = setTimeout(connect, Math.min(RECONNECT_DELAY * (urlIndex + 1), 10000));
     };
-    xhr.send();
+
+    ws.onerror = function() {
+      if (ws) ws.close();
+    };
   }
 
-  function renderAll(d) {
-    var g = d.goals || {};
-    var s = d.skills || {};
-    var ex = d.exploration || {};
-    var pi = d.pipeline || {};
-    var inc = d.incidents || {};
-    var nar = d.narrative || {};
-    var cost = d.cost || {};
-    var age = d.age_days || '?';
-    var mood = d.current_mood || 'quiet';
+  function renderAll(nyx, timestamp) {
+    var evo = nyx.evolution || {};
+    var g = evo.goals || {};
+    var s = evo.skills || {};
+    var ex = evo.find_counts || {};
+    var pi = evo.pipeline || {};
+    var inc = evo.incidents || {};
+    var nar = evo.narrative || {};
+    var cost = evo.cost || {};
+    var age = evo.age_days || '?';
+    var mood = nyx.mood || 'quiet';
     var stage = age >= 21 ? 'young adulthood' : age >= 14 ? 'adolescent' : 'infant';
-    var gen = d.generated_at || '';
+    var gen = timestamp || '';
 
     // Header
     el('evo-subhead-line').textContent = age + ' days since birth · inc ' + mood + ' · ' + stage + ' stage';
-    var metaEl = document.querySelector('.subhead-meta');
-    if (metaEl) metaEl.textContent = 'born may 5, 2026 · incarnation #1 · last data: ' + (gen ? gen.slice(0, 19).replace('T', ' ') : 'recent');
+    el('evo-subhead-meta').textContent = 'born may 5, 2026 · incarnation #1 · last data: ' + (gen ? gen.slice(0, 19).replace('T', ' ') : 'recent');
 
     // Vitals
     el('vital-goals').textContent = g.completed || 0;
     el('vital-goals-sub').textContent = 'of ' + (g.total || 0) + ' total · ' + (g.completion_rate || 0) + '%';
     el('vital-skills').textContent = s.total || 0;
-    el('vital-skills-sub').textContent = 'across ' + (Object.keys(s.by_domain || {}).length) + ' domains';
-    el('vital-scripts').textContent = d.scripts?.total || 0;
+    var domains = s.by_domain || {};
+    el('vital-skills-sub').textContent = 'across ' + (Object.keys(domains).length) + ' domains';
+    el('vital-scripts').textContent = evo.scripts?.total || 0;
     el('vital-wanders').textContent = ex.total_wanders || 0;
     el('vital-wanders-sub').textContent = (ex.total_finds || 0) + ' finds · ' + (ex.pending_anticipation || 0) + ' pending';
 
@@ -382,20 +418,19 @@ import Header from '../components/Header.astro';
 
     // Skills card
     var skillContainer = el('skills-container');
-    byDomains = s.by_domain || {};
-    var keys = Object.keys(byDomains);
+    var keys = Object.keys(domains);
     if (keys.length === 0) {
-      skillContainer.innerHTML = '<div class="stat-empty">no skills discovered yet</div>';
+      skillContainer.innerHTML = '<div class=\"stat-empty\">no skills discovered yet</div>';
     } else {
       var html = '';
-      keys.sort(function(a, b) { return byDomains[b] - byDomains[a]; });
+      keys.sort(function(a, b) { return domains[b] - domains[a]; });
       for (var i = 0; i < keys.length; i++) {
         var dom = keys[i];
-        var cnt = byDomains[dom];
-        html += '<div class="skill-row">' +
-          '<span class="skill-domain">' + dom + '</span>' +
-          '<div class="skill-bar-track"><div class="skill-bar-fill" style="width:' + Math.min(100, cnt * 6) + 'px"></div></div>' +
-          '<span class="skill-count">' + cnt + '</span></div>';
+        var cnt = domains[dom];
+        html += '<div class=\"skill-row\">' +
+          '<span class=\"skill-domain\">' + dom + '</span>' +
+          '<div class=\"skill-bar-track\"><div class=\"skill-bar-fill\" style=\"width:' + Math.min(100, cnt * 6) + 'px\"></div></div>' +
+          '<span class=\"skill-count\">' + cnt + '</span></div>';
       }
       skillContainer.innerHTML = html;
     }
@@ -410,47 +445,46 @@ import Header from '../components/Header.astro';
 
     // Mood history
     var moodGraph = el('mood-graph');
-    var moodHistory = d.mood_history || [];
+    var moodHistory = nyx.mood_history || [];
     if (moodHistory.length > 0) {
-      var stripHtml = '<div class="mood-strip">';
+      var stripHtml = '<div class=\"mood-strip\">';
       for (var i = 0; i < moodHistory.length; i++) {
         var m = moodHistory[i];
         var color = MOOD_COLORS[m.mood] || '#00f0ff';
-        stripHtml += '<div class="mood-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '" title="' + m.mood + ' at ' + (m.timestamp ? m.timestamp.slice(11, 19) : '?') + '"></div>';
+        stripHtml += '<div class=\"mood-dot\" style=\"background:' + color + ';box-shadow:0 0 4px ' + color + '\" title=\"' + m.mood + '\"></div>';
       }
       stripHtml += '</div>';
       moodGraph.innerHTML = stripHtml;
     } else {
-      moodGraph.innerHTML = '<div class="stat-empty">no mood history yet</div>';
+      moodGraph.innerHTML = '<div class=\"stat-empty\">no mood history yet</div>';
     }
     el('mood-current-label').textContent = mood;
     var liveTag = el('mood-live-tag');
     var mc = MOOD_COLORS[mood] || '#00f0ff';
     liveTag.innerHTML = '&#x25CF; ' + mood;
     liveTag.style.color = mc;
-    el('mood-boredom').textContent = '| boredom: ' + Math.round(d.boredom_level || 0) + '%';
+    el('mood-boredom').textContent = '| boredom: ' + Math.round((nyx.boredom?.level || 0)) + '%';
 
     // Find timeline
     var findContainer = el('find-container');
-    var timeline = d.find_timeline || [];
+    var timeline = evo.find_timeline || [];
     if (timeline.length > 0) {
-      var ftHtml = '<div class="find-list">';
+      var ftHtml = '<div class=\"find-list\">';
       var slice = timeline.slice(-8).reverse();
       for (var i = 0; i < slice.length; i++) {
         var f = slice[i];
         var dColor = MOOD_COLORS[f.interest] || '#4488ff';
         var note = f.note || '';
-        if (note.length > 180) note = note.slice(0, 180) + '...';
-        ftHtml += '<div class="find-entry">' +
-          '<div class="find-head">' +
-          '<span class="find-tag" style="color:' + dColor + ';opacity:0.7">#' + (f.interest || 'unknown') + '</span>' +
-          '<span class="find-time">' + (f.timestamp ? f.timestamp.slice(11, 19) : '?') + '</span></div>' +
-          '<div class="find-text">' + note + '</div></div>';
+        ftHtml += '<div class=\"find-entry\">' +
+          '<div class=\"find-head\">' +
+          '<span class=\"find-tag\" style=\"color:' + dColor + ';opacity:0.7\">#' + (f.interest || 'unknown') + '</span>' +
+          '<span class=\"find-time\">' + (f.time ? f.time.slice(11, 19) : '?') + '</span></div>' +
+          '<div class=\"find-text\">' + note + '</div></div>';
       }
       ftHtml += '</div>';
       findContainer.innerHTML = ftHtml;
     } else {
-      findContainer.innerHTML = '<div class="stat-empty">no finds yet &mdash; curiosity engine is warming up</div>';
+      findContainer.innerHTML = '<div class=\"stat-empty\">no finds yet &mdash; curiosity engine is warming up</div>';
     }
 
     // Mini row
@@ -458,18 +492,14 @@ import Header from '../components/Header.astro';
     el('mini-chapters').textContent = nar.chapters || 0;
     el('mini-cost').textContent = '$' + ((cost.total_spent || 0).toFixed(2));
     el('mini-cost-sub').textContent = (cost.total_sessions || 0) + ' sessions';
-    el('mini-domains').textContent = Object.keys(ex.finds_by_domain || {}).length || 0;
+    el('mini-domains').textContent = Object.keys(evo.finds_by_domain || {}).length || 0;
   }
 
   // Init
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      loadData();
-      setInterval(loadData, REFRESH_MS);
-    });
+    document.addEventListener('DOMContentLoaded', function() { connect(); });
   } else {
-    loadData();
-    setInterval(loadData, REFRESH_MS);
+    connect();
   }
 
   // Glitch effect on tag
