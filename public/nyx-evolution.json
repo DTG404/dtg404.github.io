@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T19:45:03.860824+00:00",
+  "generated_at": "2026-05-25T20:00:43.957282+00:00",
   "age_days": 20,
   "goals": {
     "total": 35,
@@ -34,7 +34,7 @@
     }
   },
   "scripts": {
-    "total": 56
+    "total": 58
   },
   "exploration": {
     "total_wanders": 20,
