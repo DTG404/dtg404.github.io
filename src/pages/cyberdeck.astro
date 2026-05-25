@@ -408,6 +408,7 @@ import Header from '../components/Header.astro';
   }
   .mesh-tooltip .tt-type { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
   .mesh-tooltip .tt-name { color: var(--text-primary); font-weight: 600; margin: 2px 0; }
+  .mesh-tooltip .tt-sub { color: var(--text-muted); font-size: 10px; margin-bottom: 4px; opacity: 0.7; }
   .mesh-tooltip .tt-meta { color: var(--text-muted); font-size: 10px; display: flex; gap: 12px; }
   .mesh-tooltip .tt-meta span { display: inline-flex; align-items: center; gap: 3px; }
   .mesh-hint {
@@ -875,8 +876,10 @@ import Header from '../components/Header.astro';
         var cpuStr = (hovered.cpu || 0).toFixed(1);
         var memStr = (hovered.mem || 0).toFixed(1);
         meshTooltip.innerHTML =
-          '<div class="tt-type">' + (hovered.type || '?') + '</div>' +
+          '<div class="tt-type">' + (hovered.type || '?') +
+          (hovered.count && hovered.count > 1 ? ' [' + hovered.count + ' workers]' : '') + '</div>' +
           '<div class="tt-name">' + (hovered.label || hovered.id) + '</div>' +
+          (hovered.subtitle ? '<div class="tt-sub">' + hovered.subtitle + '</div>' : '') +
           '<div class="tt-meta">' +
           '<span>&#x26A1; ' + cpuStr + '%</span>' +
           '<span>&#x25C9; ' + memStr + '%</span>' +
@@ -935,11 +938,29 @@ import Header from '../components/Header.astro';
         ctx.fillStyle = col; ctx.shadowColor = col;
         ctx.shadowBlur = nd.type === 'core' ? pulse : 10; ctx.fill(); ctx.shadowBlur = 0;
 
-        // Show label immediately (no delay) — only if not too many nodes
+        // Show label + subtitle + count badge
         if (st.nodes.length <= 18) {
           var labelY = nd.y + r + 12;
-          ctx.fillStyle = 'rgba(200,220,255,0.75)'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(200,220,255,0.85)'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
           ctx.fillText(nd.label, nd.x, labelY);
+          // Subtitle line (smaller, dimmer)
+          if (nd.subtitle) {
+            ctx.fillStyle = 'rgba(140,160,200,0.55)'; ctx.font = '8px monospace';
+            ctx.fillText(nd.subtitle, nd.x, labelY + 11);
+          }
+          // Count badge on the node corner
+          if (nd.count && nd.count > 1) {
+            var badgeX = nd.x + r + 3, badgeY = nd.y - r - 3, badgeR = 7;
+            ctx.save();
+            ctx.beginPath(); ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff3366'; ctx.shadowColor = '#ff3366'; ctx.shadowBlur = 5; ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 7px monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('' + nd.count, badgeX, badgeY);
+            ctx.textBaseline = 'alphabetic';
+            ctx.restore();
+          }
         }
       }
       if (st._run) requestAnimationFrame(draw);
